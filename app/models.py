@@ -3,7 +3,6 @@ from app.extensions import db, login_manager
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# Essencial para o Flask-Login identificar o usuário conectado
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -16,7 +15,10 @@ class User(db.Model, UserMixin):
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    deleted_at = db.Column(db.DateTime, nullable=True) # Soft Delete
+    deleted_at = db.Column(db.DateTime, nullable=True)
+
+    # Relacionamento para acessar agendamentos a partir do usuário
+    appointments = db.relationship('Appointment', back_populates='user', lazy=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -27,19 +29,26 @@ class User(db.Model, UserMixin):
 class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=True) # Adicionado conforme requisitos iniciais
+    description = db.Column(db.Text, nullable=True)
     duration_minutes = db.Column(db.Integer, nullable=False)
     price_cents = db.Column(db.Integer, nullable=False)
     active = db.Column(db.Boolean, default=True)
+
+    # Relacionamento para acessar agendamentos a partir do serviço
+    appointments = db.relationship('Appointment', back_populates='service', lazy=True)
 
 class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
     start_datetime = db.Column(db.DateTime, nullable=False, index=True)
-    end_datetime = db.Column(db.DateTime, nullable=False) # Necessário para checar overlap
-    status = db.Column(db.String(20), default='pending') # pending, confirmed, cancelled, completed
+    end_datetime = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(20), default='pending')
     
-    # Audit trail
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # AQUI ESTÁ A CORREÇÃO PARA O ERRO DO JINJA2:
+    # Estes relacionamentos permitem acessar appt.user e appt.service
+    user = db.relationship('User', back_populates='appointments')
+    service = db.relationship('Service', back_populates='appointments')
