@@ -1,79 +1,175 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-br" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Agenda - Gestão Inteligente</title>
+    <title>Smart Agenda | Gestão Inteligente</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
-</head>
-<body class="bg-gray-50 flex flex-col min-h-screen">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        [x-cloak] { display: none !important; }
+        
+        /* Efeito Glassmorphism Customizado */
+        .nav-glass {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
 
-    <nav class="bg-white shadow-md" x-data="{ open: false }">
+        /* Animação suave para as notificações */
+        .toast-enter { transform: translateX(120%); }
+        .toast-enter-active { transform: translateX(0); transition: 0.4s ease-out; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] flex flex-col min-h-full text-slate-900">
+
+    <nav class="sticky top-0 z-50 nav-glass border-b border-slate-200/60" x-data="{ open: false }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
+            <div class="flex justify-between h-20">
+                
                 <div class="flex items-center">
-                    <a href="{{ url_for('main.index') }}" class="text-2xl font-bold text-blue-600">SmartAgenda</a>
+                    <a href="{{ url_for('main.index') }}" class="flex items-center space-x-3 group">
+                        <div class="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 group-hover:rotate-6 transition-transform duration-300">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                        </div>
+                        <span class="text-2xl font-black tracking-tight text-slate-900 uppercase">
+                            Smart<span class="text-indigo-600">Agenda</span>
+                        </span>
+                    </a>
                 </div>
                 
-                <div class="hidden md:flex items-center space-x-4">
-                    <a href="{{ url_for('main.index') }}" class="text-gray-700 hover:text-blue-600">Início</a>
+                <div class="hidden md:flex items-center space-x-1">
+                    <a href="{{ url_for('main.index') }}" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all">Início</a>
+                    
                     {% if current_user.is_authenticated %}
-                        <a href="#" class="text-gray-700 hover:text-blue-600">Meus Agendamentos</a>
+                        <a href="{{ url_for('main.my_appointments') }}" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition-all">Minha Agenda</a>
+                        
                         {% if current_user.is_admin %}
-                            <a href="{{ url_for('admin.dashboard') }}" class="bg-red-100 text-red-600 px-3 py-1 rounded">Admin</a>
+                            <div class="h-6 w-px bg-slate-200 mx-3"></div>
+                            <div class="flex items-center gap-1 bg-slate-100/50 p-1 rounded-2xl border border-slate-200">
+                                <a href="{{ url_for('admin.dashboard') }}" class="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 hover:bg-white transition-all">Dashboard</a>
+                                <a href="{{ url_for('admin.list_services') }}" class="px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 hover:bg-white transition-all">Serviços</a>
+                            </div>
                         {% endif %}
-                        <a href="{{ url_for('auth.logout') }}" class="text-gray-500 hover:text-red-500">Sair</a>
+                        
+                        <div class="h-6 w-px bg-slate-200 mx-3"></div>
+                        <a href="{{ url_for('auth.logout') }}" class="text-slate-400 hover:text-red-500 p-2 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                        </a>
                     {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="text-gray-700">Login</a>
-                        <a href="{{ url_for('auth.register') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Começar</a>
+                        <a href="{{ url_for('auth.login') }}" class="px-6 py-2 text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors">Login</a>
+                        <a href="{{ url_for('auth.register') }}" class="bg-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all active:scale-95">
+                            Começar agora
+                        </a>
                     {% endif %}
                 </div>
 
                 <div class="md:hidden flex items-center">
-                    <button @click="open = !open" class="text-gray-500 hover:text-gray-600 focus:outline-none">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path x-show="!open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="4 6h16M4 12h16M4 18h16" />
-                            <path x-show="open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    <button @click="open = !open" class="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path x-show="!open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16m-7 6h7" />
+                            <path x-show="open" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
             </div>
         </div>
 
-        <div x-show="open" class="md:hidden bg-white border-t border-gray-100 px-4 pt-2 pb-3 space-y-1">
-            <a href="/" class="block text-gray-700 py-2">Início</a>
+        <div x-show="open" x-cloak 
+             x-transition:enter="transition ease-out duration-200" 
+             x-transition:enter-start="opacity-0 -translate-y-4" 
+             x-transition:enter-end="opacity-100 translate-y-0" 
+             class="md:hidden bg-white border-t border-slate-100 p-6 space-y-4 shadow-2xl">
+            <a href="{{ url_for('main.index') }}" class="block text-lg font-semibold text-slate-900">Início</a>
             {% if current_user.is_authenticated %}
-                <a href="#" class="block text-gray-700 py-2">Meus Agendamentos</a>
-                <a href="{{ url_for('auth.logout') }}" class="block text-red-500 py-2">Sair</a>
+                <a href="{{ url_for('main.my_appointments') }}" class="block text-lg font-semibold text-slate-900">Minha Agenda</a>
+                {% if current_user.is_admin %}
+                    <div class="bg-slate-50 p-4 rounded-3xl space-y-3">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Administração</p>
+                        <a href="{{ url_for('admin.dashboard') }}" class="block text-indigo-600 font-bold">Painel de Controle</a>
+                        <a href="{{ url_for('admin.list_services') }}" class="block text-indigo-600 font-bold">Gerenciar Serviços</a>
+                    </div>
+                {% endif %}
+                <a href="{{ url_for('auth.logout') }}" class="block text-red-500 font-bold pt-4 border-t">Sair da conta</a>
             {% else %}
-                <a href="{{ url_for('auth.login') }}" class="block text-gray-700 py-2">Login</a>
-                <a href="{{ url_for('auth.register') }}" class="block text-blue-600 font-bold py-2">Cadastrar</a>
+                <a href="{{ url_for('auth.login') }}" class="block text-lg font-semibold text-slate-900">Login</a>
+                <a href="{{ url_for('auth.register') }}" class="block bg-indigo-600 text-white p-4 rounded-2xl text-center font-bold">Cadastrar Grátis</a>
             {% endif %}
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto px-4 mt-4">
+    <div class="fixed top-24 right-6 z-[100] space-y-4 max-w-sm w-full">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="p-4 mb-4 rounded-lg {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
-                        {{ message }}
+                <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+                     class="group bg-white rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 flex items-center space-x-4 animate-slide-in-right">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center {% if category == 'error' %}bg-red-50 text-red-500{% else %}bg-emerald-50 text-emerald-500{% endif %}">
+                        {% if category == 'error' %}
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        {% else %}
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        {% endif %}
                     </div>
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-slate-900">{{ message }}</p>
+                    </div>
+                    <button @click="show = false" class="text-slate-300 hover:text-slate-500 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
     </div>
 
-    <main class="flex-grow max-w-7xl mx-auto px-4 py-8 w-full">
+    <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-white border-t border-gray-200 py-8">
-        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500">
-            &copy; 2025 Smart Agenda - Sistema de Agendamento Profissional.
+    <footer class="bg-white border-t border-slate-200 py-16">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-10 space-y-6 md:space-y-0 text-left">
+                <div class="max-w-xs">
+                    <span class="text-lg font-black text-slate-800 uppercase tracking-tighter italic">Smart<span class="text-indigo-600 underline">Agenda</span></span>
+                    <p class="text-slate-400 text-sm mt-3 font-medium">Otimizando sua rotina com tecnologia de ponta e design intuitivo.</p>
+                </div>
+                <div class="flex gap-12">
+                    <div class="flex flex-col space-y-3">
+                        <span class="text-xs font-black text-slate-900 uppercase">Produto</span>
+                        <a href="#" class="text-sm text-slate-400 hover:text-indigo-600 transition-colors font-medium">Planos</a>
+                        <a href="#" class="text-sm text-slate-400 hover:text-indigo-600 transition-colors font-medium">Empresas</a>
+                    </div>
+                    <div class="flex flex-col space-y-3">
+                        <span class="text-xs font-black text-slate-900 uppercase">Suporte</span>
+                        <a href="#" class="text-sm text-slate-400 hover:text-indigo-600 transition-colors font-medium">Privacidade</a>
+                        <a href="#" class="text-sm text-slate-400 hover:text-indigo-600 transition-colors font-medium">Ajuda</a>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-xs text-slate-400 font-bold">&copy; 2025 Smart Agenda. Todos os direitos reservados.</p>
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Sistema Operacional</span>
+                </div>
+            </div>
         </div>
     </footer>
+
+    <style>
+        @keyframes slide-in-right {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .animate-slide-in-right { animation: slide-in-right 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    </style>
 
 </body>
 </html>

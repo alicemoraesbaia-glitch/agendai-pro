@@ -1,32 +1,67 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="text-center py-12">
-    <h1 class="text-4xl font-extrabold text-gray-900 sm:text-6xl">
-        Agende seu horário em <span class="text-blue-600">segundos.</span>
-    </h1>
-    <p class="mt-4 text-xl text-gray-500 max-w-2xl mx-auto">
-        Escolha o serviço, selecione o profissional e garanta sua reserva de forma inteligente e rápida.
-    </p>
-</div>
+<div class="py-8">
+    <div class="mb-12 text-center md:text-left">
+        <h1 class="text-4xl font-extrabold text-slate-900 tracking-tight">
+            Nossos <span class="text-indigo-600">Serviços</span>
+        </h1>
+        <p class="text-slate-500 mt-2 text-lg">Escolha a melhor opção e agende em segundos.</p>
+    </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
-    {% for service in services %}
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
-        <h3 class="text-xl font-bold text-gray-800">{{ service.name }}</h3>
-        <p class="text-gray-500 mt-2 text-sm">{{ service.description or 'Serviço profissional de alta qualidade.' }}</p>
-        <div class="mt-4 flex justify-between items-center">
-            <span class="text-blue-600 font-bold text-lg">R$ {{ "%.2f"|format(service.price_cents / 100) }}</span>
-            <span class="text-gray-400 text-sm">{{ service.duration_minutes }} min</span>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for service in services %}
+        <div class="group bg-white rounded-3xl border border-slate-200 p-2 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-100 hover:-translate-y-2">
+            
+            <div class="relative h-48 w-full rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600">
+                <div class="absolute inset-0 opacity-20 pattern-grid-white"></div> <div class="absolute bottom-4 left-4">
+                    <span class="bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold border border-white/30">
+                        {{ service.duration_minutes }} min
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-5">
+                <div class="flex justify-between items-start mb-3">
+                    <h3 class="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                        {{ service.name }}
+                    </h3>
+                    <div class="text-right">
+                        <span class="block text-xs font-black text-slate-400 uppercase tracking-widest">Investimento</span>
+                        <span class="text-2xl font-black text-indigo-600">R$ {{ "%.2f"|format(service.price_cents / 100) }}</span>
+                    </div>
+                </div>
+
+                <p class="text-slate-500 text-sm leading-relaxed line-clamp-2 mb-6">
+                    {{ service.description or "Serviço profissional personalizado para atender às suas necessidades com excelência." }}
+                </p>
+
+                <div class="flex items-center gap-4 mb-6 text-xs font-semibold text-slate-400">
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 mr-1 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293l-4 4a1 1 0 01-1.414 0l-2-2a1 1 0 111.414-1.414L9 10.586l3.293-3.293a1 1 0 111.414 1.414z"/></svg>
+                        Confirmado na hora
+                    </div>
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 mr-1 text-emerald-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293l-4 4a1 1 0 01-1.414 0l-2-2a1 1 0 111.414-1.414L9 10.586l3.293-3.293a1 1 0 111.414 1.414z"/></svg>
+                        Suporte Premium
+                    </div>
+                </div>
+
+                <a href="{{ url_for('main.book_service', service_id=service.id) }}" 
+                   class="block w-full text-center bg-slate-900 text-white font-bold py-4 rounded-2xl transition-all group-hover:bg-indigo-600 group-hover:shadow-lg group-hover:shadow-indigo-200 active:scale-95">
+                    Reservar Horário
+                </a>
+            </div>
         </div>
-        <a href="#" class="block w-full text-center mt-6 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
-            Agendar Agora
-        </a>
+        {% else %}
+        <div class="col-span-full py-20 text-center">
+            <div class="bg-slate-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-4xl">🛠️</span>
+            </div>
+            <h2 class="text-xl font-bold text-slate-900">Nenhum serviço disponível</h2>
+            <p class="text-slate-500">Estamos preparando novidades para você. Volte em breve!</p>
+        </div>
+        {% endfor %}
     </div>
-    {% else %}
-    <div class="col-span-full text-center py-10 bg-blue-50 rounded-xl border border-blue-100">
-        <p class="text-blue-600 font-medium">Nenhum serviço disponível no momento. Volte logo!</p>
-    </div>
-    {% endfor %}
 </div>
 {% endblock %}
