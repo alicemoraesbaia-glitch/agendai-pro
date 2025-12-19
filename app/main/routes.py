@@ -1,7 +1,9 @@
-from flask import Blueprint, render_template
-
-main_bp = Blueprint('main', __name__)
+from flask import render_template
+from app.main import main_bp
+from app.models import Service
 
 @main_bp.route('/')
 def index():
-    return "<h1>Smart Agenda: Home</h1><p>Em breve: Lista de Serviços</p>"
+    # Buscamos os serviços ativos para exibir na landing page
+    services = Service.query.filter_by(active=True).all()
+    return render_template('main/index.html', services=services)

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-800">Painel Administrativo</h1>
+        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">Modo Admin</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <p class="text-sm text-gray-500 uppercase font-bold">Total de Clientes</p>
+            <p class="text-3xl font-black text-blue-600">--</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <p class="text-sm text-gray-500 uppercase font-bold">Agendamentos Hoje</p>
+            <p class="text-3xl font-black text-green-600">0</p>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <p class="text-sm text-gray-500 uppercase font-bold">Receita Estimada</p>
+            <p class="text-3xl font-black text-gray-800">R$ 0,00</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 text-center py-20">
+        <p class="text-gray-400">Aqui aparecerão as tabelas de gestão de serviços e usuários.</p>
+    </div>
+</div>
+{% endblock %}
