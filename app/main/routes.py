@@ -10,79 +10,85 @@ def index():
     services = Service.query.filter_by(active=True).all()
     return render_template('main/index.html', services=services)
 
+
 @main_bp.route('/book/<int:service_id>', methods=['GET', 'POST'])
 @login_required
 def book_service(service_id):
     service = Service.query.get_or_404(service_id)
     now = datetime.now()
-    today_date = now.date()
     
-    date_str = request.args.get('date', today_date.strftime('%Y-%m-%d'))
-    
+    # --- AJUSTE AQUI: Tenta pegar a data de vários lugares ---
+    if request.method == 'POST':
+        date_str = request.form.get('date') or request.args.get('date') or now.strftime('%Y-%m-%d')
+    else:
+        date_str = request.args.get('date') or now.strftime('%Y-%m-%d')
+
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        if selected_date < today_date:
-            flash('Não é possível agendar para datas passadas.', 'warning')
-            return redirect(url_for('main.book_service', service_id=service.id, date=today_date.strftime('%Y-%m-%d')))
-    except ValueError:
-        selected_date = today_date
+    except:
+        selected_date = now.date()
         date_str = selected_date.strftime('%Y-%m-%d')
 
     working_hours = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
+
+    # Busca ocupados apenas para a SELECTED_DATE correta
+    start_day = datetime.combine(selected_date, datetime.min.time())
+    end_day = datetime.combine(selected_date, datetime.max.time())
     
-    # Busca apenas agendamentos não cancelados para liberar o horário caso alguém cancele
-    existing_appointments = Appointment.query.filter(
-        db.func.date(Appointment.start_datetime) == selected_date,
-        Appointment.status != 'cancelled'
-    ).all()
-    occupied_times = [appt.start_datetime.strftime('%H:%M') for appt in existing_appointments]
-
-    slots = []
-    for h in working_hours:
-        slot_time_obj = datetime.strptime(h, '%H:%M').time()
-        is_free_in_db = h not in occupied_times
-        is_future_time = True
-        if selected_date == today_date:
-            is_future_time = slot_time_obj > now.time()
-
-        slots.append({
-            'time': datetime.strptime(h, '%H:%M'),
-            'available': is_free_in_db and is_future_time
-        })
+    occupied_slots = [
+        appt.start_datetime.strftime('%H:%M') 
+        for appt in Appointment.query.filter(
+            Appointment.start_datetime >= start_day,
+            Appointment.start_datetime <= end_day,
+            Appointment.status != 'cancelled'
+        ).all()
+    ]
 
     if request.method == 'POST':
         time_str = request.form.get('slot')
+        
+        # DEBUG para confirmar se agora a data veio certa
+        print(f">>> DATA FINAL NO POST: {selected_date}")
+        print(f">>> HORA RECEBIDA: {time_str}")
+
         if not time_str:
-            flash('Selecione um horário válido.', 'warning')
+            flash('Selecione um horário.', 'warning')
             return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
 
-        start_dt = datetime.combine(selected_date, datetime.strptime(time_str, '%H:%M').time())
-        end_dt = start_dt + timedelta(minutes=service.duration_minutes)
+        clean_time = time_str.strip()[:5]
 
-        conflict = Appointment.query.filter_by(start_datetime=start_dt).filter(Appointment.status != 'cancelled').first()
-        if conflict:
-            flash('Este horário acaba de ser ocupado.', 'danger')
+        if clean_time in occupied_slots:
+            flash(f'O horário {clean_time} já está ocupado nesta data.', 'danger')
             return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
 
         try:
+            start_dt = datetime.combine(selected_date, datetime.strptime(clean_time, '%H:%M').time())
             new_appt = Appointment(
                 start_datetime=start_dt,
-                end_datetime=end_dt,
+                end_datetime=start_dt + timedelta(minutes=service.duration_minutes),
                 service_id=service.id,
                 user_id=current_user.id,
                 status='pending'
             )
             db.session.add(new_appt)
             db.session.commit()
-            flash('Agendamento realizado com sucesso!', 'success')
-            return redirect(url_for('main.my_appointments')) # Redireciona para a agenda do usuário
-            
+            flash('Agendamento realizado!', 'success')
+            return redirect(url_for('main.my_appointments'))
         except Exception as e:
             db.session.rollback()
-            flash('Erro técnico ao salvar.', 'danger')
-            print(f"Erro: {e}")
+            flash('Erro ao salvar.', 'danger')
+
+    # Para o GET
+    slots = []
+    for h in working_hours:
+        slot_time_obj = datetime.strptime(h, '%H:%M').time()
+        is_free = h not in occupied_slots
+        is_future = True if selected_date > now.date() else slot_time_obj > now.time()
+        slots.append({'time': datetime.combine(selected_date, slot_time_obj), 'available': is_free and is_future})
 
     return render_template('main/book.html', service=service, slots=slots, date=date_str)
+
+
 
 @main_bp.route('/my-appointments')
 @login_required
