@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto space-y-10">
+<div class="max-w-7xl mx-auto space-y-10 py-10">
     <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div>
             <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-2 block">Gestão de Portfólio</span>
@@ -11,7 +11,7 @@
             <p class="text-slate-500 mt-2 font-medium">Configure os preços, tempos e visibilidade dos seus atendimentos.</p>
         </div>
         
-        <a href="{{ url_for('admin.new_service') }}" 
+        <a href="{{ url_for('admin.manage_service') }}" 
            class="inline-flex items-center justify-center bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 shadow-2xl shadow-slate-200 transition-all transform hover:-translate-y-1 active:scale-95 group">
             <svg class="w-4 h-4 mr-2 text-indigo-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/>
@@ -44,7 +44,9 @@
                                 </div>
                                 <div>
                                     <p class="text-base font-bold text-slate-900 leading-tight">{{ s.name }}</p>
-                                    <p class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter mt-1">{{ s.description[:40] }}{% if s.description|length > 40 %}...{% endif %}</p>
+                                    <p class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter mt-1">
+                                        {{ s.description[:40] }}{% if s.description|length > 40 %}...{% endif %}
+                                    </p>
                                 </div>
                             </div>
                         </td>
@@ -76,7 +78,7 @@
 
                         <td class="px-8 py-6">
                             <div class="flex justify-center">
-                                <a href="{{ url_for('admin.edit_service', id=s.id) }}" 
+                                <a href="{{ url_for('admin.manage_service', id=s.id) }}" 
                                    class="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:border-indigo-500 hover:text-indigo-500 hover:bg-indigo-50 transition-all shadow-sm hover:shadow-md">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -98,7 +100,7 @@
         
         <div class="bg-slate-50/50 px-8 py-6 border-t border-slate-100 flex justify-between items-center">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                Controle de Inventário v1.0
+                Controle de Portfólio v1.0
             </p>
             <p class="text-[10px] font-black text-indigo-600 uppercase tracking-[0.2em] bg-indigo-50 px-3 py-1 rounded-full">
                 {{ services|length }} Serviços Totais

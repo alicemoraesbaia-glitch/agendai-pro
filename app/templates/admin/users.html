@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-10">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-2 block">Administração</span>
+            <h1 class="text-4xl font-black text-slate-900 tracking-tight italic">
+                Base de <span class="text-indigo-600">Usuários</span>
+            </h1>
+        </div>
+
+        <a href="{{ url_for('admin.new_user') }}" 
+           class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+            </svg>
+            Novo Usuário
+        </a>
+    </div>
+
+    <div class="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-xl border border-white overflow-hidden">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50/50 border-b border-slate-100">
+                    <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">ID</th>
+                    <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nome de Usuário</th>
+                    <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">E-mail</th>
+                    <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                {% for user in users %}
+                <tr class="hover:bg-slate-50/80 transition-all">
+                    <td class="px-8 py-6 text-slate-400 font-mono text-xs">#{{ user.id }}</td>
+                    <td class="px-8 py-6 font-bold text-slate-900 capitalize">
+                        {{ user.username }}
+                        {% if user.id == current_user.id %}
+                            <span class="ml-2 text-[8px] bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-tighter">Você</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-8 py-6 text-slate-500 text-sm">{{ user.email }}</td>
+                    <td class="px-8 py-6 flex gap-4">
+                        <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="text-indigo-600 font-bold text-xs uppercase hover:underline">Editar</a>
+                        
+                        {# Impede que o admin logado veja o botão de excluir no próprio nome #}
+                        {% if user.id != current_user.id %}
+                        <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" onsubmit="return confirm('Excluir este usuário permanentemente?')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="text-red-400 font-bold text-xs uppercase hover:text-red-600">Excluir</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
