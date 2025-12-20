@@ -71,7 +71,9 @@
                             <div class="flex justify-end gap-2">
                                 {% if appt.status == 'pending' %}
                                 <form action="{{ url_for('admin.update_status', id=appt.id, new_status='confirmed') }}" method="POST">
-                                    <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tighter shadow-lg shadow-emerald-100 transition-all active:scale-90">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    
+                                    <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tighter shadow-lg shadow-emerald-100 transition-all active:scale-90 text-center">
                                         Aprovar
                                     </button>
                                 </form>
@@ -79,6 +81,8 @@
                                 
                                 {% if appt.status != 'cancelled' %}
                                 <form action="{{ url_for('admin.update_status', id=appt.id, new_status='cancelled') }}" method="POST">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                    
                                     <button class="bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-100 hover:bg-red-50 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-tighter transition-all">
                                         Remover
                                     </button>
