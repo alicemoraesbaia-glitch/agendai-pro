@@ -7,6 +7,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+from itsdangerous import URLSafeTimedSerializer as Serializer
+from flask import current_app
+# Mantenha seus outros imports (datetime, generate_password_hash, etc)
+
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -17,9 +21,8 @@ class User(db.Model, UserMixin):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
-    # Relacionamento para acessar agendamentos a partir do usuário
     appointments = db.relationship('Appointment', back_populates='user', lazy=True)
-    # AJUSTE SÊNIOR: Compatibilidade com templates que usam 'username'
+
     @property
     def username(self):
         return self.name
@@ -29,6 +32,23 @@ class User(db.Model, UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    # --- NOVOS MÉTODOS PARA RECUPERAÇÃO DE SENHA ---
+    
+    def get_reset_password_token(self):
+        """Gera um token seguro baseado na SECRET_KEY do seu .env"""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'user_id': self.id})
+
+    @staticmethod
+    def verify_reset_password_token(token, expires_sec=1800):
+        """Verifica se o token é válido e se não expirou (30 min)"""
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            user_id = s.loads(token, max_age=expires_sec)['user_id']
+        except:
+            return None
+        return User.query.get(user_id)
 
 class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True)

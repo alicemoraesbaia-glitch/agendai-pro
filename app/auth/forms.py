@@ -21,3 +21,19 @@ class RegistrationForm(FlaskForm):
         user = User.query.filter_by(email=email.data).first()
         if user:
             raise ValidationError('Este email já está cadastrado.')
+        
+        
+class ResetPasswordRequestForm(FlaskForm):
+    email = StringField('E-mail', validators=[DataRequired(), Email()])
+    submit = SubmitField('Enviar Instruções')
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('Nova Senha', validators=[
+        DataRequired(), 
+        Length(min=6, message="A senha deve ter pelo menos 6 caracteres")
+    ])
+    confirm_password = PasswordField('Confirme a Nova Senha', validators=[
+        DataRequired(), 
+        EqualTo('password', message="As senhas devem ser iguais")
+    ])
+    submit = SubmitField('Redefinir Senha')

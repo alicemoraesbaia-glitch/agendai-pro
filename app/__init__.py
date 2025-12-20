@@ -11,7 +11,7 @@ def create_app(config_class=Config):
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
-    mail.init_app(app)
+    mail.init_app(app)  # <--- Isso ativa o motor de e-mail
     csrf.init_app(app)
 
     # Register Blueprints
