@@ -19,6 +19,10 @@ class User(db.Model, UserMixin):
 
     # Relacionamento para acessar agendamentos a partir do usuário
     appointments = db.relationship('Appointment', back_populates='user', lazy=True)
+    # AJUSTE SÊNIOR: Compatibilidade com templates que usam 'username'
+    @property
+    def username(self):
+        return self.name
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -44,6 +48,7 @@ class Appointment(db.Model):
     start_datetime = db.Column(db.DateTime, nullable=False, index=True)
     end_datetime = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20), default='pending')
+    payment_status = db.Column(db.String(20), default='pending') # 'pending', 'paid'
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -52,3 +57,30 @@ class Appointment(db.Model):
     # Estes relacionamentos permitem acessar appt.user e appt.service
     user = db.relationship('User', back_populates='appointments')
     service = db.relationship('Service', back_populates='appointments')
+    
+    
+    @property
+    def is_expired(self):
+        """Retorna True se o horário passou e ainda estava pendente"""
+        return self.status == 'pending' and self.start_datetime < datetime.now()
+
+    def get_display_status(self):
+        """Retorna o texto do status com a lógica de expiração"""
+        if self.is_expired:
+            return "Expirado"
+        
+        status_map = {
+            'pending': 'Pendente',
+            'confirmed': 'Confirmado',
+            'cancelled': 'Cancelado'
+        }
+        return status_map.get(self.status, self.status)
+    
+      # Método para confirmar via Admin
+    def confirm(self):
+        self.status = 'confirmed'
+        
+    # Método para confirmar via Pagamento
+    def mark_as_paid(self):
+        self.payment_status = 'paid'
+        self.status = 'confirmed'

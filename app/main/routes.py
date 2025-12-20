@@ -3,12 +3,10 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.main import main_bp
 from app.models import Service, Appointment
-from app.utils.availability import get_available_slots
-from datetime import datetime, timedelta # CORREÇÃO: Importação necessária para somar tempo
+from datetime import datetime, timedelta
 
 @main_bp.route('/')
 def index():
-    # Buscamos os serviços ativos para exibir na landing page
     services = Service.query.filter_by(active=True).all()
     return render_template('main/index.html', services=services)
 
@@ -16,35 +14,75 @@ def index():
 @login_required
 def book_service(service_id):
     service = Service.query.get_or_404(service_id)
-    selected_date_str = request.args.get('date', datetime.now().strftime('%Y-%m-%d'))
-    selected_date = datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+    now = datetime.now()
+    today_date = now.date()
     
-    slots = get_available_slots(selected_date, service.duration_minutes)
+    date_str = request.args.get('date', today_date.strftime('%Y-%m-%d'))
     
+    try:
+        selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        if selected_date < today_date:
+            flash('Não é possível agendar para datas passadas.', 'warning')
+            return redirect(url_for('main.book_service', service_id=service.id, date=today_date.strftime('%Y-%m-%d')))
+    except ValueError:
+        selected_date = today_date
+        date_str = selected_date.strftime('%Y-%m-%d')
+
+    working_hours = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
+    
+    # Busca apenas agendamentos não cancelados para liberar o horário caso alguém cancele
+    existing_appointments = Appointment.query.filter(
+        db.func.date(Appointment.start_datetime) == selected_date,
+        Appointment.status != 'cancelled'
+    ).all()
+    occupied_times = [appt.start_datetime.strftime('%H:%M') for appt in existing_appointments]
+
+    slots = []
+    for h in working_hours:
+        slot_time_obj = datetime.strptime(h, '%H:%M').time()
+        is_free_in_db = h not in occupied_times
+        is_future_time = True
+        if selected_date == today_date:
+            is_future_time = slot_time_obj > now.time()
+
+        slots.append({
+            'time': datetime.strptime(h, '%H:%M'),
+            'available': is_free_in_db and is_future_time
+        })
+
     if request.method == 'POST':
         time_str = request.form.get('slot')
-        if time_str:
-            # Converte string para objeto datetime
-            start_dt = datetime.strptime(f"{selected_date_str} {time_str}", '%Y-%m-%d %H:%M')
-            
-            # CORREÇÃO SÊNIOR: Calcula o fim do agendamento
-            # Sem isso, o banco gera o erro 'NOT NULL constraint failed: appointment.end_datetime'
-            end_dt = start_dt + timedelta(minutes=service.duration_minutes)
-            
+        if not time_str:
+            flash('Selecione um horário válido.', 'warning')
+            return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
+
+        start_dt = datetime.combine(selected_date, datetime.strptime(time_str, '%H:%M').time())
+        end_dt = start_dt + timedelta(minutes=service.duration_minutes)
+
+        conflict = Appointment.query.filter_by(start_datetime=start_dt).filter(Appointment.status != 'cancelled').first()
+        if conflict:
+            flash('Este horário acaba de ser ocupado.', 'danger')
+            return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
+
+        try:
             new_appt = Appointment(
-                user_id=current_user.id,
-                service_id=service.id,
                 start_datetime=start_dt,
-                end_datetime=end_dt, # Agora enviamos o valor obrigatório
+                end_datetime=end_dt,
+                service_id=service.id,
+                user_id=current_user.id,
                 status='pending'
             )
             db.session.add(new_appt)
             db.session.commit()
+            flash('Agendamento realizado com sucesso!', 'success')
+            return redirect(url_for('main.my_appointments')) # Redireciona para a agenda do usuário
             
-            flash('Agendamento solicitado com sucesso! Verifique em seus agendamentos.', 'success')
-            return redirect(url_for('main.my_appointments')) # Sênior: leva direto para onde o usuário vê o resultado
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro técnico ao salvar.', 'danger')
+            print(f"Erro: {e}")
 
-    return render_template('main/book.html', service=service, slots=slots, date=selected_date_str)
+    return render_template('main/book.html', service=service, slots=slots, date=date_str)
 
 @main_bp.route('/my-appointments')
 @login_required
@@ -52,21 +90,53 @@ def my_appointments():
     appointments = Appointment.query.filter_by(user_id=current_user.id)\
         .order_by(Appointment.start_datetime.desc()).all()
     
-    return render_template('main/my_appointments.html', appointments=appointments, now=datetime.now())
+    return render_template('main/my_appointments.html', 
+                           appointments=appointments, 
+                           now=datetime.now())
 
 @main_bp.route('/cancel-appointment/<int:appt_id>', methods=['POST'])
 @login_required
 def cancel_appointment(appt_id):
     appt = Appointment.query.get_or_404(appt_id)
     
+    # VALIDAÇÃO SÊNIOR: Segurança de Propriedade
     if appt.user_id != current_user.id:
         abort(403)
-    
+        
+    # VALIDAÇÃO SÊNIOR: Impede cancelar o que já passou ou já foi cancelado
     if appt.start_datetime < datetime.now():
-        flash('Não é possível cancelar um agendamento passado.', 'error')
+        flash('Não é possível cancelar um agendamento passado ou expirado.', 'warning')
         return redirect(url_for('main.my_appointments'))
 
-    appt.status = 'cancelled'
-    db.session.commit()
-    flash('Agendamento cancelado com sucesso.', 'success')
+    try:
+        appt.status = 'cancelled'
+        db.session.commit()
+        flash('Agendamento cancelado com sucesso.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Erro ao processar cancelamento.', 'danger')
+        print(f"DEBUG: {e}")
+        
+    return redirect(url_for('main.my_appointments'))
+
+
+@main_bp.route('/simulate-payment/<int:appt_id>', methods=['POST'])
+@login_required
+def simulate_payment(appt_id):
+    appt = Appointment.query.get_or_404(appt_id)
+    
+    # Segurança: Apenas o dono do agendamento pode pagar
+    if appt.user_id != current_user.id:
+        abort(403)
+
+    if appt.status == 'pending':
+        # Na vida real, aqui você chamaria a API do Stripe/MercadoPago
+        appt.status = 'confirmed'
+        appt.payment_status = 'paid' # Se você criou essa coluna no banco
+        
+        db.session.commit()
+        flash("Pagamento aprovado! Seu horário foi confirmado automaticamente.", "success")
+    else:
+        flash("Este agendamento não permite pagamento.", "warning")
+        
     return redirect(url_for('main.my_appointments'))

@@ -18,62 +18,93 @@
         </a>
     </div>
 
-    <div class="space-y-4">
+    <div class="space-y-6">
         {% for appt in appointments %}
-        <div class="group bg-white rounded-3xl border border-slate-200 p-5 md:p-7 flex flex-col md:flex-row md:items-center justify-between transition-all hover:border-indigo-200 hover:shadow-xl hover:shadow-slate-100">
+        <div class="group bg-white rounded-[2rem] border border-slate-200 p-5 md:p-8 flex flex-col transition-all hover:border-indigo-200 hover:shadow-2xl hover:shadow-indigo-100/30">
             
-            <div class="flex items-start md:items-center space-x-6">
-                <div class="flex-shrink-0 w-16 h-16 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-slate-100 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors">
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-indigo-400">
-                        {{ appt.start_datetime.strftime('%b') }}
-                    </span>
-                    <span class="text-2xl font-black text-slate-700 group-hover:text-indigo-600">
-                        {{ appt.start_datetime.strftime('%d') }}
-                    </span>
-                </div>
-
-                <div>
-                    <h3 class="font-bold text-slate-900 text-xl group-hover:text-indigo-600 transition-colors">
-                        {{ appt.service.name }}
-                    </h3>
-                    <div class="flex flex-wrap items-center gap-y-1 gap-x-4 mt-1 text-sm font-semibold text-slate-400">
-                        <span class="flex items-center">
-                            <svg class="w-4 h-4 mr-1.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                            {{ appt.start_datetime.strftime('%H:%M') }}
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="flex items-start md:items-center space-x-6">
+                    <div class="flex-shrink-0 w-16 h-16 bg-slate-50 rounded-2xl flex flex-col items-center justify-center border border-slate-100 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover:text-indigo-400">
+                            {{ appt.start_datetime.strftime('%b') }}
                         </span>
-                        <span class="flex items-center">
-                            <svg class="w-4 h-4 mr-1.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            {{ appt.service.duration_minutes }} min
+                        <span class="text-2xl font-black text-slate-700 group-hover:text-indigo-600">
+                            {{ appt.start_datetime.strftime('%d') }}
                         </span>
                     </div>
+
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-xl group-hover:text-indigo-600 transition-colors">
+                            {{ appt.service.name }}
+                        </h3>
+                        <div class="flex flex-wrap items-center gap-y-1 gap-x-4 mt-1 text-sm font-semibold text-slate-400">
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-1.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                {{ appt.start_datetime.strftime('%H:%M') }}
+                            </span>
+                            <span class="flex items-center">
+                                <svg class="w-4 h-4 mr-1.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                {{ appt.service.duration_minutes }} min
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 ml-auto md:ml-0">
+                    <div class="flex flex-col items-end">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-1">Status</span>
+                        
+                        {% if appt.is_expired %}
+                            <span class="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider bg-slate-100 text-slate-400 border border-slate-200">
+                                Expirado
+                            </span>
+                        {% else %}
+                            <span class="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider
+                                {% if appt.status == 'confirmed' %} bg-emerald-50 text-emerald-600 border border-emerald-100
+                                {% elif appt.status == 'pending' %} bg-amber-50 text-amber-600 border border-amber-100
+                                {% elif appt.status == 'cancelled' %} bg-red-50 text-red-600 border border-red-100
+                                {% endif %}">
+                                {{ 'Confirmado' if appt.status == 'confirmed' else 'Pendente' if appt.status == 'pending' else 'Cancelado' }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    {% if appt.status != 'cancelled' and not appt.is_expired %}
+                    <form action="{{ url_for('main.cancel_appointment', appt_id=appt.id) }}" method="POST" 
+                          onsubmit="return confirm('Deseja realmente cancelar seu horário?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                        <button type="submit" class="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all" title="Cancelar Agendamento">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
             </div>
 
-            <div class="mt-6 md:mt-0 flex items-center justify-between md:justify-end space-x-8">
-                <div class="flex flex-col items-end">
-                    <span class="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-1">Status</span>
-                    <span class="px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider
-                        {% if appt.status == 'confirmed' %} bg-emerald-50 text-emerald-600
-                        {% elif appt.status == 'pending' %} bg-amber-50 text-amber-600
-                        {% elif appt.status == 'cancelled' %} bg-red-50 text-red-600
-                        {% else %} bg-slate-100 text-slate-600 {% endif %}">
-                        {{ 'Confirmado' if appt.status == 'confirmed' else 
-                           'Pendente' if appt.status == 'pending' else 
-                           'Cancelado' if appt.status == 'cancelled' else appt.status }}
-                    </span>
+            {% if appt.status == 'pending' and not appt.is_expired %}
+            <div class="mt-6 pt-6 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center">
+                        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-slate-900 leading-tight">Pagamento Pendente</p>
+                        <p class="text-[11px] text-slate-500 font-medium">Pague agora para confirmar seu horário instantaneamente.</p>
+                    </div>
                 </div>
-
-                {% if appt.status != 'cancelled' and appt.start_datetime > now %}
-                <form action="{{ url_for('main.cancel_appointment', appt_id=appt.id) }}" method="POST" 
-                      onsubmit="return confirm('Deseja realmente cancelar seu horário?');">
-                    <button type="submit" class="p-3 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-2xl transition-all">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                
+                <form action="{{ url_for('main.simulate_payment', appt_id=appt.id) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    <button type="submit" class="w-full sm:w-auto px-8 py-3 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg shadow-slate-200 flex items-center justify-center gap-2 group">
+                        <svg class="w-4 h-4 text-emerald-400 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                        Efetuar Pagamento
                     </button>
                 </form>
-                {% endif %}
             </div>
+            {% endif %}
+
         </div>
         {% else %}
         <div class="text-center py-24 bg-white rounded-[2rem] border-2 border-dashed border-slate-200">

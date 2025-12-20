@@ -1,43 +1,46 @@
-from flask import render_template, redirect, url_for, flash, request, abort
+from flask import render_template, request, flash, redirect, url_for, abort
 from flask_login import login_required, current_user
+from app.extensions import db
 from app.admin import admin_bp
-from app.models import Appointment, Service 
-from app.extensions import db               
-from datetime import datetime, date, timedelta
+from app.models import Appointment, Service
 from sqlalchemy import func
+from datetime import datetime, timedelta
 
-# --- DASHBOARD PRINCIPAL ---
 @admin_bp.route('/dashboard')
 @login_required
 def dashboard():
     if not current_user.is_admin:
-        flash("Acesso restrito a administradores.", "error")
+        flash("Acesso restrito a administradores.", "danger") # Padronizado para 'danger'
         return redirect(url_for('main.index'))
     
-    # 1. MÉTRICAS TOTAIS
+    # 1. MÉTRICAS TOTAIS (Consistente com fuso local)
     all_appointments = Appointment.query.all()
+    # A receita só conta agendamentos 'confirmed'
     total_revenue = sum((a.service.price_cents if a.service else 0) for a in all_appointments if a.status == 'confirmed') / 100
     total_appointments = len(all_appointments)
     
-    # 2. DADOS PARA O GRÁFICO (Corrigido para start_datetime)
+    # 2. DADOS PARA O GRÁFICO (Últimos 7 dias)
+    # Usamos datetime.now() para manter consistência com o restante do app
+    seven_days_ago = datetime.now() - timedelta(days=7)
     stats_7_days = db.session.query(
-        func.date(Appointment.start_datetime), # <--- CORRIGIDO
+        func.date(Appointment.start_datetime),
         func.count(Appointment.id)
     ).filter(
-        Appointment.start_datetime >= datetime.utcnow() - timedelta(days=7) # <--- CORRIGIDO
-    ).group_by(func.date(Appointment.start_datetime)).all() # <--- CORRIGIDO
+        Appointment.start_datetime >= seven_days_ago
+    ).group_by(func.date(Appointment.start_datetime)).all()
 
     chart_labels = [str(row[0]) for row in stats_7_days]
     chart_data = [row[1] for row in stats_7_days]
 
-    # 3. LISTA DE HOJE (Corrigido para start_datetime)
-    today = datetime.utcnow().date()
+    # 3. LISTA DE HOJE
+    today = datetime.now().date()
     services_today = Appointment.query.filter(
-        func.date(Appointment.start_datetime) == today # <--- CORRIGIDO
+        func.date(Appointment.start_datetime) == today,
+        Appointment.status != 'cancelled' # Sênior: Não listamos cancelados na agenda do dia
     ).all()
 
-    # 4. TABELA DE GESTÃO (Corrigido para start_datetime)
-    appointments = Appointment.query.order_by(Appointment.start_datetime.desc()).all() # <--- CORRIGIDO
+    # 4. TABELA DE GESTÃO (Todos os agendamentos)
+    appointments = Appointment.query.order_by(Appointment.start_datetime.desc()).all()
 
     return render_template(
         'admin/dashboard.html', 
@@ -47,8 +50,31 @@ def dashboard():
         chart_labels=chart_labels,
         chart_data=chart_data,
         services_today=services_today,
-        now=datetime.now()
+        now=datetime.now() # Necessário para a lógica de 'is_expired' no template
     )
+
+# --- NOVA ROTA: CONFIRMAÇÃO ---
+@admin_bp.route('/confirm-appointment/<int:appt_id>', methods=['POST'])
+@login_required
+def confirm_appointment(appt_id):
+    if not current_user.is_admin:
+        abort(403)
+        
+    appt = Appointment.query.get_or_404(appt_id)
+    
+    if appt.status == 'pending':
+        appt.status = 'confirmed'
+        try:
+            db.session.commit()
+            flash(f'Agendamento de {appt.user.name} confirmado com sucesso!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao confirmar agendamento.', 'danger')
+            print(f"Erro Admin: {e}")
+    else:
+        flash('Este agendamento não pode ser confirmado.', 'warning')
+        
+    return redirect(url_for('admin.dashboard'))
 
 # --- AÇÕES DE AGENDAMENTO ---
 @admin_bp.route('/appointment/<int:id>/status/<string:new_status>', methods=['POST'])
