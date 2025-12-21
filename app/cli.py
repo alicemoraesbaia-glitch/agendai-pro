@@ -1,7 +1,7 @@
 import click
 from flask.cli import with_appcontext
 from app.extensions import db
-from app.models import User, Service
+from app.models import User, Service, Resource
 
 def register_commands(app):
     """
@@ -15,7 +15,6 @@ def register_commands(app):
     @with_appcontext
     def create_admin(email, password):
         """Cria um usuário administrador inicial."""
-        # Verifica se o usuário já existe para evitar erro de duplicidade
         user_exists = User.query.filter_by(email=email).first()
         if user_exists:
             click.echo(f"Erro: O usuário {email} já existe.")
@@ -31,47 +30,74 @@ def register_commands(app):
         db.session.commit()
         click.echo(f"Sucesso! Administrador {email} criado com êxito.")
 
-    @app.cli.command("seed-services")
+    @app.cli.command("seed-health")
     @with_appcontext
-    def seed_services():
-        """Popula o banco com serviços de diversos segmentos (Uso Universal)."""
-        services_data = [
-            {
-                'name': 'Consultoria Especializada', 
-                'duration': 60, 
-                'price': 20000, 
-                'desc': 'Reunião estratégica para análise e planejamento.'
-            },
-            {
-                'name': 'Atendimento Padrão', 
-                'duration': 30, 
-                'price': 8000, 
-                'desc': 'Sessão rápida para procedimentos gerais.'
-            },
-            {
-                'name': 'Procedimento Avançado', 
-                'duration': 90, 
-                'price': 35000, 
-                'desc': 'Tratamento completo com acompanhamento detalhado.'
-            }
+    def seed_health():
+        """Popula o banco com Recursos e Serviços de Saúde/Estética."""
+        
+        # 1. Criar Recursos (Salas/Equipamentos)
+        resources_data = [
+            {'name': 'Sala de Fisioterapia 01', 'type': 'room'},
+            {'name': 'Equipamento Laser Premium', 'type': 'equipment'},
+            {'name': 'Sala de Estética Avançada', 'type': 'room'}
         ]
         
+        for r_data in resources_data:
+            if not Resource.query.filter_by(name=r_data['name']).first():
+                res = Resource(name=r_data['name'], type=r_data['type'])
+                db.session.add(res)
+        
+        db.session.commit()
+
+        # 2. Criar Serviços vinculados aos recursos
+        # Buscamos os recursos recém-criados para vincular os IDs
+        sala_fisio = Resource.query.filter_by(name='Sala de Fisioterapia 01').first()
+        laser = Resource.query.filter_by(name='Equipamento Laser Premium').first()
+
+        services_data = [
+            {
+                'name': 'Fisioterapia Esportiva',
+                'category': 'Fisioterapia',
+                'duration': 50,
+                'price': 15000,
+                'desc': 'Tratamento focado em recuperação de lesões atléticas.',
+                'resource_id': sala_fisio.id if sala_fisio else None
+            },
+            {
+                'name': 'Depilação a Laser',
+                'category': 'Estética',
+                'duration': 30,
+                'price': 12000,
+                'desc': 'Procedimento com tecnologia de ponta para remoção de pelos.',
+                'resource_id': laser.id if laser else None
+            },
+            {
+                'name': 'Limpeza de Pele Profunda',
+                'category': 'Estética',
+                'duration': 60,
+                'price': 18000,
+                'desc': 'Remoção de impurezas e hidratação facial completa.',
+                'resource_id': None
+            }
+        ]
+
         count = 0
-        for data in services_data:
-            # Só adiciona se o serviço não existir (evita duplicados em múltiplos seeds)
-            if not Service.query.filter_by(name=data['name']).first():
+        for s_data in services_data:
+            if not Service.query.filter_by(name=s_data['name']).first():
                 new_service = Service(
-                    name=data['name'],
-                    duration_minutes=data['duration'],
-                    price_cents=data['price'],
-                    description=data['desc'],
+                    name=s_data['name'],
+                    category=s_data['category'],
+                    duration_minutes=s_data['duration'],
+                    price_cents=s_data['price'],
+                    description=s_data['desc'],
+                    resource_id=s_data['resource_id'],
                     active=True
                 )
                 db.session.add(new_service)
                 count += 1
-        
+
         db.session.commit()
-        click.echo(f"Finalizado! {count} novos serviços universais foram adicionados.")
+        click.echo(f"Finalizado! {count} serviços de saúde/estética foram adicionados.")
 
     @app.cli.command("db-reset")
     @with_appcontext

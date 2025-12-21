@@ -1,40 +1,47 @@
 from datetime import datetime, timedelta
-from app.models import Appointment
+from app.models import Appointment, Service
 
-def get_available_slots(date, service_duration):
-    # Horário de funcionamento: 08:00 às 18:00
+def get_available_slots(date, service_id):
+    """
+    Retorna slots disponíveis considerando:
+    1. Horário de funcionamento (08:00 - 18:00)
+    2. Horários que já passaram (se for hoje)
+    3. Conflitos de Equipamentos/Salas (RF002)
+    """
+    service = Service.query.get(service_id)
+    if not service:
+        return []
+
+    service_duration = service.duration_minutes
+    
+    # Definição da janela de trabalho
     start_time = datetime.combine(date, datetime.strptime("08:00", "%H:%M").time())
     end_time = datetime.combine(date, datetime.strptime("18:00", "%H:%M").time())
     
-    # Busca agendamentos (O índice que criamos acima torna esta linha super rápida)
-    existing_appointments = Appointment.query.filter(
-        Appointment.start_datetime >= start_time,
-        Appointment.start_datetime < end_time,
-        Appointment.status != 'cancelled'
-    ).all()
-
     available_slots = []
     current_slot = start_time
-    now = datetime.now() # Captura o momento exato do acesso
+    now = datetime.now()
 
     while current_slot + timedelta(minutes=service_duration) <= end_time:
         slot_end = current_slot + timedelta(minutes=service_duration)
         
-        # REGRA SÊNIOR 1: Bloquear horários que já passaram hoje
+        # REGRA 1: Bloquear horários que já passaram hoje
         if current_slot < now:
             is_free = False
         else:
-            is_free = True
-            # REGRA SÊNIOR 2: Verificar conflito com agendamentos existentes
-            for appt in existing_appointments:
-                appt_end = appt.start_datetime + timedelta(minutes=service_duration)
-                if current_slot < appt_end and slot_end > appt.start_datetime:
-                    is_free = False
-                    break
+            # REGRA 2: Verificar conflito de Recurso (Sala/Equipamento)
+            # Usamos o método estático que criamos no Model Appointment
+            has_conflict = Appointment.check_resource_conflict(
+                service_id=service.id,
+                start_dt=current_slot,
+                end_dt=slot_end
+            )
+            is_free = not has_conflict
         
         if is_free:
             available_slots.append(current_slot)
         
+        # Intervalo entre o início de cada slot (ex: de 30 em 30 min)
         current_slot += timedelta(minutes=30)
         
     return available_slots

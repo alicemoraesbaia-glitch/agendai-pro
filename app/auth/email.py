@@ -1,31 +1,53 @@
-from flask_mail import Message
+from threading import Thread
 from flask import render_template, current_app, url_for
+from flask_mail import Message
 from app.extensions import mail
 
+def send_async_email(app, msg):
+    """Envia o e-mail em segundo plano"""
+    with app.app_context():
+        try:
+            mail.send(msg)
+            print(f"✅ E-mail enviado com sucesso!")
+        except Exception as e:
+            print(f"❌ Erro no envio assíncrono: {e}")
+
 def send_password_reset_email(user):
-    # Gera o token para este usuário específico
+    # 1. Gera o token e a URL
     token = user.get_reset_password_token()
-    
-    # Cria o link completo que o usuário vai clicar
-    # O _external=True é vital para gerar http://127.0.0.1... em vez de apenas /auth/...
     reset_url = url_for('auth.reset_password', token=token, _external=True)
     
-    msg = Message('[Smart Agenda] Redefina sua Senha',
-                  sender=current_app.config['MAIL_USERNAME'],
-                  recipients=[user.email])
+    # 2. Configura a mensagem
+    msg = Message(
+        '[Smart Agenda] Redefinição de Senha',
+        sender=current_app.config['MAIL_USERNAME'],
+        recipients=[user.email]
+    )
     
-    msg.body = f"Para redefinir sua senha, clique no link: {reset_url}"
+    # Corpo em texto simples (fallback)
+    msg.body = f"Olá {user.name},\n\nPara redefinir sua senha, utilize o link: {reset_url}"
+    
+    # Corpo em HTML com o estilo da Smart Agenda
     msg.html = f"""
-        <p>Olá {user.name},</p>
-        <p>Clique no link abaixo para redefinir sua senha:</p>
-        <p><a href="{reset_url}">{reset_url}</a></p>
-        <p>Se você não solicitou isso, ignore este e-mail.</p>
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
+        <h2 style="color: #10b981;">Smart Agenda</h2>
+        <p>Olá, <strong>{user.name}</strong>,</p>
+        <p>Recebemos uma solicitação para redefinir a senha da sua conta na clínica.</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{reset_url}" 
+               style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                Redefinir Senha
+            </a>
+        </div>
+        <p style="color: #64748b; font-size: 0.9em;">Este link é válido por 30 minutos. Se você não solicitou esta alteração, ignore este e-mail.</p>
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0;">
+        <p style="color: #94a3b8; font-size: 0.8em; text-align: center;">Smart Agenda - Gestão Clínica Inteligente</p>
+    </div>
     """
     
-    try:
-        mail.send(msg)
-        print(f"✅ E-mail enviado com sucesso para: {user.email}")
-        return True
-    except Exception as e:
-        print(f"❌ Erro ao enviar e-mail: {e}")
-        return False
+    # 3. Dispara a Thread
+    # Usamos _get_current_object() para passar a instância real do app para a thread
+    app = current_app._get_current_object()
+    Thread(target=send_async_email, args=(app, msg)).start()
+    
+    return True

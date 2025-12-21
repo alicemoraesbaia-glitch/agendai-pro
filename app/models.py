@@ -1,27 +1,42 @@
-from datetime import datetime
-from app.extensions import db, login_manager
-from flask_login import UserMixin
+from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash, check_password_hash
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-from itsdangerous import URLSafeTimedSerializer as Serializer
 from flask import current_app
-# Mantenha seus outros imports (datetime, generate_password_hash, etc)
+from flask_login import UserMixin
+from itsdangerous import URLSafeTimedSerializer as Serializer
+from app.extensions import db
 
-class User(db.Model, UserMixin):
+class User(UserMixin, db.Model):
+    __tablename__ = 'user'
+    
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     deleted_at = db.Column(db.DateTime, nullable=True)
 
+    # Controle de Segurança
+    failed_login_attempts = db.Column(db.Integer, default=0)
+    is_locked = db.Column(db.Boolean, default=False)
+
+    # Relacionamentos
     appointments = db.relationship('Appointment', back_populates='user', lazy=True)
+
+    # --- MÉTODOS DE SEGURANÇA (DENTRO DA CLASSE USER) ---
+    def increase_failed_attempts(self):
+        """Lógica defensiva para evitar o erro de NoneType"""
+        if self.failed_login_attempts is None:
+            self.failed_login_attempts = 0
+        
+        self.failed_login_attempts += 1
+        if self.failed_login_attempts >= 3:
+            self.is_locked = True
+
+    def reset_failed_attempts(self):
+        self.failed_login_attempts = 0
+        self.is_locked = False
 
     @property
     def username(self):
@@ -33,74 +48,89 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-    # --- NOVOS MÉTODOS PARA RECUPERAÇÃO DE SENHA ---
-    
     def get_reset_password_token(self):
-        """Gera um token seguro baseado na SECRET_KEY do seu .env"""
         s = Serializer(current_app.config['SECRET_KEY'])
         return s.dumps({'user_id': self.id})
 
     @staticmethod
     def verify_reset_password_token(token, expires_sec=1800):
-        """Verifica se o token é válido e se não expirou (30 min)"""
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
-            user_id = s.loads(token, max_age=expires_sec)['user_id']
-        except:
+            data = s.loads(token, max_age=expires_sec)
+            user_id = data['user_id']
+        except Exception:
             return None
         return User.query.get(user_id)
 
+class Resource(db.Model):
+    __tablename__ = 'resource'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False, unique=True)
+    category = db.Column(db.String(50))  # 'Sala' ou 'Equipamento'
+    
+    services = db.relationship('Service', back_populates='resource', lazy=True)
+
 class Service(db.Model):
+    __tablename__ = 'service'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
     duration_minutes = db.Column(db.Integer, nullable=False)
     price_cents = db.Column(db.Integer, nullable=False)
+    category = db.Column(db.String(50), nullable=False, default='Geral')
     active = db.Column(db.Boolean, default=True)
 
-    # Relacionamento para acessar agendamentos a partir do serviço
+    resource_id = db.Column(db.Integer, db.ForeignKey('resource.id'), nullable=True)
+    resource = db.relationship('Resource', back_populates='services')
     appointments = db.relationship('Appointment', back_populates='service', lazy=True)
 
 class Appointment(db.Model):
+    __tablename__ = 'appointment'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
     start_datetime = db.Column(db.DateTime, nullable=False, index=True)
     end_datetime = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20), default='pending')
-    payment_status = db.Column(db.String(20), default='pending') # 'pending', 'paid'
+    payment_status = db.Column(db.String(20), default='pending')
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
-    # AQUI ESTÁ A CORREÇÃO PARA O ERRO DO JINJA2:
-    # Estes relacionamentos permitem acessar appt.user e appt.service
     user = db.relationship('User', back_populates='appointments')
     service = db.relationship('Service', back_populates='appointments')
     
-    
     @property
     def is_expired(self):
-        """Retorna True se o horário passou e ainda estava pendente"""
-        return self.status == 'pending' and self.start_datetime < datetime.now()
+        return self.status == 'pending' and self.start_datetime < datetime.now(timezone.utc)
 
     def get_display_status(self):
-        """Retorna o texto do status com a lógica de expiração"""
         if self.is_expired:
             return "Expirado"
-        
-        status_map = {
-            'pending': 'Pendente',
-            'confirmed': 'Confirmado',
-            'cancelled': 'Cancelado'
-        }
+        status_map = {'pending': 'Pendente', 'confirmed': 'Confirmado', 'cancelled': 'Cancelado'}
         return status_map.get(self.status, self.status)
     
-      # Método para confirmar via Admin
     def confirm(self):
         self.status = 'confirmed'
         
-    # Método para confirmar via Pagamento
     def mark_as_paid(self):
         self.payment_status = 'paid'
         self.status = 'confirmed'
+
+    @staticmethod
+    def check_resource_conflict(service_id, start_dt, end_dt, exclude_id=None):
+        service = Service.query.get(service_id)
+        if not service or not service.resource_id:
+            return False
+            
+        query = Appointment.query.join(Service).filter(
+            Service.resource_id == service.resource_id,
+            Appointment.status != 'cancelled',
+            Appointment.start_datetime < end_dt,
+            Appointment.end_datetime > start_dt
+        )
+        
+        if exclude_id:
+            query = query.filter(Appointment.id != exclude_id)
+            
+        return query.first() is not None

@@ -2,147 +2,135 @@ from flask import render_template, request, flash, redirect, url_for, abort
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.main import main_bp
-from app.models import Service, Appointment
+from app.models import Service, Appointment, Resource
 from datetime import datetime, timedelta
 
+# --- ROTA: HOME (INDEX) ---
 @main_bp.route('/')
 def index():
+    # Buscamos categorias únicas para o sistema de "Exploração"
+    categories = db.session.query(Service.category).filter(Service.active==True).distinct().all()
     services = Service.query.filter_by(active=True).all()
-    return render_template('main/index.html', services=services)
+    return render_template('main/index.html', 
+                           services=services, 
+                           categories=[c[0] for c in categories])
 
+# --- ROTA: EXPLORAR POR CATEGORIA (Novo Requisito) ---
+@main_bp.route('/explorar/<category_name>')
+def explore_category(category_name):
+    services = Service.query.filter_by(category=category_name, active=True).all()
+    return render_template('main/category_explore.html', 
+                           category=category_name, 
+                           services=services)
 
+# --- ROTA: AGENDAMENTO (CORE LOGIC COM RF002) ---
 @main_bp.route('/book/<int:service_id>', methods=['GET', 'POST'])
 @login_required
 def book_service(service_id):
     service = Service.query.get_or_404(service_id)
     now = datetime.now()
     
-    # --- AJUSTE AQUI: Tenta pegar a data de vários lugares ---
-    if request.method == 'POST':
-        date_str = request.form.get('date') or request.args.get('date') or now.strftime('%Y-%m-%d')
-    else:
-        date_str = request.args.get('date') or now.strftime('%Y-%m-%d')
-
+    # Tratamento de Data (POST e GET)
+    date_str = request.form.get('date') or request.args.get('date') or now.strftime('%Y-%m-%d')
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
     except:
         selected_date = now.date()
         date_str = selected_date.strftime('%Y-%m-%d')
 
+    # Configuração de Horários da Clínica
     working_hours = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
-
-    # Busca ocupados apenas para a SELECTED_DATE correta
-    start_day = datetime.combine(selected_date, datetime.min.time())
-    end_day = datetime.combine(selected_date, datetime.max.time())
-    
-    occupied_slots = [
-        appt.start_datetime.strftime('%H:%M') 
-        for appt in Appointment.query.filter(
-            Appointment.start_datetime >= start_day,
-            Appointment.start_datetime <= end_day,
-            Appointment.status != 'cancelled'
-        ).all()
-    ]
 
     if request.method == 'POST':
         time_str = request.form.get('slot')
         
-        # DEBUG para confirmar se agora a data veio certa
-        print(f">>> DATA FINAL NO POST: {selected_date}")
-        print(f">>> HORA RECEBIDA: {time_str}")
-
         if not time_str:
-            flash('Selecione um horário.', 'warning')
+            flash('Por favor, selecione um horário disponível.', 'warning')
             return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
 
         clean_time = time_str.strip()[:5]
+        start_dt = datetime.combine(selected_date, datetime.strptime(clean_time, '%H:%M').time())
+        end_dt = start_dt + timedelta(minutes=service.duration_minutes)
 
-        if clean_time in occupied_slots:
-            flash(f'O horário {clean_time} já está ocupado nesta data.', 'danger')
+        # --- RF002: VALIDAÇÃO DE CONFLITO DE RECURSO (SALA/EQUIPAMENTO) ---
+        # Verificamos se a sala ou equipamento necessário está ocupado
+        has_conflict = Appointment.check_resource_conflict(service.id, start_dt, end_dt)
+        
+        if has_conflict:
+            flash(f'Infelizmente, a sala ou equipamento para este serviço já está reservado às {clean_time}.', 'danger')
             return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
 
         try:
-            start_dt = datetime.combine(selected_date, datetime.strptime(clean_time, '%H:%M').time())
             new_appt = Appointment(
                 start_datetime=start_dt,
-                end_datetime=start_dt + timedelta(minutes=service.duration_minutes),
+                end_datetime=end_dt,
                 service_id=service.id,
                 user_id=current_user.id,
                 status='pending'
             )
             db.session.add(new_appt)
             db.session.commit()
-            flash('Agendamento realizado!', 'success')
+            flash('Reserva realizada! Aguardando confirmação de pagamento.', 'success')
             return redirect(url_for('main.my_appointments'))
         except Exception as e:
             db.session.rollback()
-            flash('Erro ao salvar.', 'danger')
+            flash('Erro sistêmico ao salvar agendamento.', 'danger')
 
-    # Para o GET
+    # Lógica para renderizar os Slots (GET)
     slots = []
     for h in working_hours:
         slot_time_obj = datetime.strptime(h, '%H:%M').time()
-        is_free = h not in occupied_slots
-        is_future = True if selected_date > now.date() else slot_time_obj > now.time()
-        slots.append({'time': datetime.combine(selected_date, slot_time_obj), 'available': is_free and is_future})
+        slot_start = datetime.combine(selected_date, slot_time_obj)
+        slot_end = slot_start + timedelta(minutes=service.duration_minutes)
+        
+        # O slot só aparece como disponível se:
+        # 1. O equipamento/sala estiver livre (check_resource_conflict)
+        # 2. O horário for no futuro
+        is_resource_free = not Appointment.check_resource_conflict(service.id, slot_start, slot_end)
+        is_future = slot_start > now
+        
+        slots.append({
+            'time': slot_start, 
+            'available': is_resource_free and is_future
+        })
 
     return render_template('main/book.html', service=service, slots=slots, date=date_str)
 
-
-
+# --- ROTA: MEUS AGENDAMENTOS ---
 @main_bp.route('/my-appointments')
 @login_required
 def my_appointments():
     appointments = Appointment.query.filter_by(user_id=current_user.id)\
         .order_by(Appointment.start_datetime.desc()).all()
-    
-    return render_template('main/my_appointments.html', 
-                           appointments=appointments, 
-                           now=datetime.now())
+    return render_template('main/my_appointments.html', appointments=appointments, now=datetime.now())
 
+# --- ROTA: CANCELAMENTO ---
 @main_bp.route('/cancel-appointment/<int:appt_id>', methods=['POST'])
 @login_required
 def cancel_appointment(appt_id):
     appt = Appointment.query.get_or_404(appt_id)
+    if appt.user_id != current_user.id: abort(403)
     
-    # VALIDAÇÃO SÊNIOR: Segurança de Propriedade
-    if appt.user_id != current_user.id:
-        abort(403)
-        
-    # VALIDAÇÃO SÊNIOR: Impede cancelar o que já passou ou já foi cancelado
     if appt.start_datetime < datetime.now():
-        flash('Não é possível cancelar um agendamento passado ou expirado.', 'warning')
+        flash('Consultas passadas não podem ser canceladas.', 'warning')
         return redirect(url_for('main.my_appointments'))
 
-    try:
-        appt.status = 'cancelled'
-        db.session.commit()
-        flash('Agendamento cancelado com sucesso.', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash('Erro ao processar cancelamento.', 'danger')
-        print(f"DEBUG: {e}")
-        
+    appt.status = 'cancelled'
+    db.session.commit()
+    flash('Consulta cancelada com sucesso.', 'success')
     return redirect(url_for('main.my_appointments'))
 
-
+# --- ROTA: PAGAMENTO SIMULADO ---
 @main_bp.route('/simulate-payment/<int:appt_id>', methods=['POST'])
 @login_required
 def simulate_payment(appt_id):
     appt = Appointment.query.get_or_404(appt_id)
-    
-    # Segurança: Apenas o dono do agendamento pode pagar
-    if appt.user_id != current_user.id:
-        abort(403)
+    if appt.user_id != current_user.id: abort(403)
 
     if appt.status == 'pending':
-        # Na vida real, aqui você chamaria a API do Stripe/MercadoPago
         appt.status = 'confirmed'
-        appt.payment_status = 'paid' # Se você criou essa coluna no banco
-        
+        appt.payment_status = 'paid'
         db.session.commit()
-        flash("Pagamento aprovado! Seu horário foi confirmado automaticamente.", "success")
-    else:
-        flash("Este agendamento não permite pagamento.", "warning")
-        
+        flash("Pagamento aprovado! Consulta confirmada.", "success")
+    
     return redirect(url_for('main.my_appointments'))

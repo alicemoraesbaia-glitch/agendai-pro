@@ -20,19 +20,48 @@ def register():
         return redirect(url_for('auth.login'))
     return render_template('auth/register.html', title='Cadastro', form=form)
 
+
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
+    
     form = LoginForm()
     if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user is None or not user.check_password(form.password.data):
-            flash('Email ou senha inválidos', 'error')
-            return redirect(url_for('auth.login'))
-        login_user(user, remember=form.remember_me.data)
-        return redirect(url_for('main.index'))
+        # Dica Sênior: Sempre normalize o e-mail (lowercase/strip)
+        user = User.query.filter_by(email=form.email.data.lower().strip()).first()
+        
+        if user:
+            # 1. Verifica se já está bloqueado antes de qualquer coisa
+            if user.is_locked:
+                flash('Conta bloqueada por excesso de tentativas. Redefina sua senha para desbloquear.', 'danger')
+                return redirect(url_for('auth.login'))
+
+            # 2. Tenta o login
+            if user.check_password(form.password.data):
+                user.reset_failed_attempts()
+                db.session.commit() # Salva o reset no banco
+                login_user(user, remember=form.remember_me.data)
+                return redirect(url_for('main.index'))
+            else:
+                # 3. Falhou: Incrementa e SALVA IMEDIATAMENTE
+                user.increase_failed_attempts()
+                db.session.commit() # VITAL: Garante que o contador suba no banco
+                
+                tentativas_restantes = 3 - (user.failed_login_attempts or 0)
+                
+                if user.is_locked:
+                    flash('Conta bloqueada após 3 tentativas inválidas.', 'danger')
+                else:
+                    flash(f'Senha incorreta. Restam {tentativas_restantes} tentativa(s).', 'warning')
+        else:
+            # Dica Sênior: Use mensagens genéricas para não confirmar se o e-mail existe
+            flash('Email ou senha inválidos.', 'danger')
+            
+        return redirect(url_for('auth.login'))
+        
     return render_template('auth/login.html', title='Entrar', form=form)
+
 
 @auth_bp.route('/logout')
 def logout():
@@ -48,18 +77,28 @@ from app.auth.email import send_password_reset_email # Verifique se este import 
 def reset_password_request():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
+    
     form = ResetPasswordRequestForm()
-    if form.validate_on_submit():
-        user = User.query.filter_by(email=form.email.data).first()
-        if user:
-            print(f">>> TENTANDO ENVIAR E-MAIL PARA: {user.email}") # PRINT DE TESTE
-            send_password_reset_email(user)
-        
-        # Mantemos a mensagem para o usuário
-        flash('Verifique seu e-mail para as instruções.', 'info')
+    
+    if request.method == 'POST':
+        print("--- 📥 Formulário Recebido! ---")
+        if form.validate_on_submit():
+            print(f"--- ✅ Formulário Válido para o e-mail: {form.email.data} ---")
+            user = User.query.filter_by(email=form.email.data).first()
+            if user:
+                print(f"--- 👤 Usuário encontrado: {user.username} ---")
+                send_password_reset_email(user)
+                flash('Um e-mail com instruções foi enviado!', 'success')
+            else:
+                print("--- ❌ Erro: E-mail não encontrado no banco de dados! ---")
+                flash('E-mail não encontrado.', 'danger')
+        else:
+            print(f"--- ⚠️ Erro de Validação do Formulário: {form.errors} ---")
+            flash('Dados inválidos no formulário.', 'danger')
+            
         return redirect(url_for('auth.login'))
+    
     return render_template('auth/reset_password_request.html', title='Recuperar Senha', form=form)
-
 
 
 @auth_bp.route('/reset_password/<token>', methods=['GET', 'POST'])
@@ -67,17 +106,19 @@ def reset_password(token):
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))
     
-    # Verifica se o token é válido usando o método que criamos no Model User
     user = User.verify_reset_password_token(token)
     if not user:
-        flash('O link de recuperação é inválido ou expirou.', 'error')
-        return redirect(url_for('auth.login'))
+        flash('O link de recuperação é inválido ou expirou.', 'danger')
+        return redirect(url_for('main.index'))
     
-    form = ResetPasswordForm() # Certifique-se de que este form está importado!
+    form = ResetPasswordForm()
     if form.validate_on_submit():
-        user.set_password(form.password.data)
-        db.session.commit()
-        flash('Sua senha foi redefinida com sucesso!', 'success')
+        # Ações Sênior:
+        user.set_password(form.password.data) # 1. Criptografa a nova senha
+        user.reset_failed_attempts()          # 2. Zera as falhas e desbloqueia (is_locked = False)
+        db.session.commit()                   # 3. Salva tudo no banco
+        
+        flash('Sua senha foi redefinida com sucesso! Você já pode entrar.', 'success')
         return redirect(url_for('auth.login'))
-    
-    return render_template('auth/reset_password.html', title='Redefinir Senha', form=form)
+        
+    return render_template('auth/reset_password.html', form=form)

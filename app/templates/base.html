@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Agenda | Gestão Inteligente</title>
+    <title>{% block title %}Smart Agenda | Gestão Inteligente{% endblock %}</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -74,7 +74,7 @@
                         {% if current_user.is_admin %}
                             <div class="h-6 w-px bg-slate-200/60 mx-2"></div>
                             <div class="flex items-center gap-1 bg-slate-200/30 p-1.5 rounded-[1.2rem] border border-slate-200/40">
-                                <a href="{{ url_for('admin.dashboard') }}" class="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-white transition-all" title="Painel Geral">Geral</a>
+                                <a href="{{ url_for('admin.dashboard') }}" class="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-white transition-all">Geral</a>
                                 <a href="{{ url_for('admin.list_all_appointments') }}" class="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-white transition-all">Agenda Total</a>
                                 <a href="{{ url_for('admin.list_services') }}" class="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-white transition-all">Serviços</a>
                                 <a href="{{ url_for('admin.list_users') }}" class="px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 hover:bg-white transition-all">Usuários</a>
@@ -84,11 +84,11 @@
                         <div class="h-6 w-px bg-slate-200/60 mx-2"></div>
                         <div class="flex items-center gap-3 bg-white/80 p-1.5 pr-4 rounded-[1.2rem] border border-slate-200/60 shadow-sm">
                             <div class="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-lg shadow-indigo-100">
-                                {{ current_user.username[0] | upper }}
+                                {{ (current_user.name[0] if current_user.name else 'U') | upper }}
                             </div>
                             <div class="flex flex-col">
-                                <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none">Usuário</span>
-                                <span class="text-sm font-bold text-slate-700 capitalize leading-tight">{{ current_user.username }}</span>
+                                <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest leading-none">Paciente</span>
+                                <span class="text-sm font-bold text-slate-700 capitalize leading-tight">{{ current_user.name }}</span>
                             </div>
                         </div>
 
@@ -123,11 +123,11 @@
             {% if current_user.is_authenticated %}
                 <div class="flex items-center gap-4 mb-8 p-4 bg-slate-50 rounded-3xl">
                     <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-xl">
-                        {{ current_user.username[0] | upper }}
+                        {{ (current_user.name[0] if current_user.name else 'U') | upper }}
                     </div>
                     <div>
-                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Logado como</p>
-                        <p class="text-xl font-black text-slate-900 capitalize">{{ current_user.username }}</p>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paciente</p>
+                        <p class="text-xl font-black text-slate-900 capitalize">{{ current_user.name }}</p>
                     </div>
                 </div>
                 <a href="{{ url_for('main.index') }}" class="block text-2xl font-black text-slate-900">Início</a>
@@ -186,37 +186,37 @@
         {% endwith %}
     </div>
 
-    <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative">
+    <main class="flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative">
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-white border-t border-slate-100 py-20 mt-20">
+    <footer class="bg-white border-t border-slate-100 py-12 mt-10">
         <div class="max-w-7xl mx-auto px-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-                <div class="col-span-1 lg:col-span-2">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-10">
+                <div class="col-span-1 md:col-span-2">
                     <span class="text-2xl font-black text-slate-800 uppercase tracking-tighter">Smart<span class="text-indigo-600">Agenda</span></span>
-                    <p class="text-slate-400 text-base mt-6 max-w-sm font-medium leading-relaxed">Redefinindo a gestão de tempo através de uma interface inteligente, fluida e feita para humanos.</p>
+                    <p class="text-slate-400 text-sm mt-4 max-w-sm font-medium leading-relaxed">Sistema especializado em gestão de tempo para clínicas e profissionais de saúde.</p>
                 </div>
                 <div>
-                    <span class="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] mb-6 block">Produto</span>
-                    <ul class="space-y-4">
-                        <li><a href="{{ url_for('main.index') }}" class="text-sm text-slate-500 hover:text-indigo-600 transition-colors font-bold">Serviços</a></li>
-                        <li><a href="{{ url_for('main.my_appointments') }}" class="text-sm text-slate-500 hover:text-indigo-600 transition-colors font-bold">Minha Agenda</a></li>
+                    <span class="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] mb-4 block">Navegação</span>
+                    <ul class="space-y-2">
+                        <li><a href="{{ url_for('main.index') }}" class="text-xs text-slate-500 hover:text-indigo-600 font-bold">Início</a></li>
+                        <li><a href="{{ url_for('main.my_appointments') }}" class="text-xs text-slate-500 hover:text-indigo-600 font-bold">Meus Agendamentos</a></li>
                     </ul>
                 </div>
                 <div>
-                    <span class="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] mb-6 block">Sistema</span>
-                    <div class="flex items-center gap-4 bg-slate-50 px-4 py-2 rounded-full border border-slate-100 w-fit">
+                    <span class="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] mb-4 block">Status</span>
+                    <div class="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100 w-fit">
                         <span class="relative flex h-2 w-2">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                         </span>
-                        <span class="text-[10px] text-slate-500 uppercase font-black tracking-widest">Online</span>
+                        <span class="text-[9px] text-slate-500 uppercase font-black tracking-widest">Sistemas Ativos</span>
                     </div>
                 </div>
             </div>
-            <div class="pt-10 border-t border-slate-100">
-                <p class="text-xs text-slate-400 font-bold tracking-tight">&copy; 2025 Smart Agenda. Built for the future.</p>
+            <div class="pt-8 border-t border-slate-100">
+                <p class="text-[10px] text-slate-400 font-bold tracking-tight uppercase">&copy; 2025 Smart Agenda - Todos os direitos reservados.</p>
             </div>
         </div>
     </footer>
