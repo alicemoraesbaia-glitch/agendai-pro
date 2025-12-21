@@ -72,17 +72,32 @@ class Resource(db.Model):
 
 class Service(db.Model):
     __tablename__ = 'service'
+    
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
     duration_minutes = db.Column(db.Integer, nullable=False)
     price_cents = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(50), nullable=False, default='Geral')
-    active = db.Column(db.Boolean, default=True)
+    
+    # Campos de Marketing e Conteúdo
+    content = db.Column(db.Text)          
+    benefits = db.Column(db.Text)         
+    indications = db.Column(db.Text)      
+    contraindications = db.Column(db.Text)
+    
+    # Controle de Status (index=True ajuda na performance de filtros no catálogo)
+    active = db.Column(db.Boolean, default=True, index=True)
 
+    # Relacionamentos
     resource_id = db.Column(db.Integer, db.ForeignKey('resource.id'), nullable=True)
     resource = db.relationship('Resource', back_populates='services')
-    appointments = db.relationship('Appointment', back_populates='service', lazy=True)
+    
+    # Appointments (cascade ajuda a manter a integridade se um serviço for deletado)
+    appointments = db.relationship('Appointment', back_populates='service', lazy=True, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f'<Service {self.name}>'
 
 class Appointment(db.Model):
     __tablename__ = 'appointment'

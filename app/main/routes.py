@@ -3,8 +3,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.main import main_bp
 from app.models import Service, Appointment, Resource
-from datetime import datetime, timedelta
-
+from datetime import datetime, timedelta, timezone
 # --- ROTA: HOME (INDEX) ---
 @main_bp.route('/')
 def index():
@@ -134,3 +133,23 @@ def simulate_payment(appt_id):
         flash("Pagamento aprovado! Consulta confirmada.", "success")
     
     return redirect(url_for('main.my_appointments'))
+
+
+@main_bp.route('/servicos')
+def list_services():
+    services = Service.query.filter_by(active=True).order_by(Service.category).all()
+    
+    # Sênior: Deixamos o SQL resolver o DISTINCT para poupar memória do servidor
+    categories_query = db.session.query(Service.category).filter_by(active=True).distinct().all()
+    categories = sorted([c[0] for c in categories_query])
+    
+    return render_template('main/services_catalog.html', 
+                           services=services, 
+                           categories=categories,
+                           title="Nossos Procedimentos")
+    
+    
+@main_bp.route('/servico/<int:service_id>')
+def service_detail(service_id):
+    service = Service.query.get_or_404(service_id)
+    return render_template('main/service_detail.html', service=service)

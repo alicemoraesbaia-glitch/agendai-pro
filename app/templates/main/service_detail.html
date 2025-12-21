@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-12 animate-fade-in">
+    
+    <div class="px-2">
+        <a href="{{ url_for('main.list_services') }}" class="inline-flex items-center text-xs font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition-colors">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Voltar para o catálogo
+        </a>
+    </div>
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+        <div class="relative h-[400px] md:h-[500px] w-full rounded-[3rem] overflow-hidden shadow-2xl shadow-indigo-100 border-4 border-white">
+            <img src="https://picsum.photos/seed/service_detail_{{ service.id }}/800/1000" 
+                 alt="{{ service.name }}"
+                 class="w-full h-full object-cover">
+            <div class="absolute top-8 left-8 bg-white/90 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/50">
+                <span class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{{ service.category }}</span>
+            </div>
+        </div>
+
+        <div class="space-y-8 flex flex-col h-full justify-center">
+            <div>
+                <h1 class="text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-[0.9] mb-6">
+                    {{ service.name }}
+                </h1>
+                <p class="text-lg text-slate-500 font-medium italic leading-relaxed">
+                    {{ service.description or "Uma experiência exclusiva desenhada para o seu bem-estar e resultados excepcionais." }}
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
+                    <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Duração</span>
+                    <span class="text-xl font-black text-slate-900">{{ service.duration_minutes }} min</span>
+                </div>
+                <div class="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100/50">
+                    <span class="block text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Investimento</span>
+                    <span class="text-xl font-black text-indigo-600">R$ {{ "%.2f"|format(service.price_cents / 100) }}</span>
+                </div>
+            </div>
+
+            <a href="{{ url_for('main.book_service', service_id=service.id) }}" 
+               class="flex items-center justify-center gap-3 bg-slate-900 text-white w-full py-6 rounded-[2.2rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-indigo-600 transition-all shadow-2xl shadow-slate-200 active:scale-[0.98]">
+                Agendar este procedimento
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-12 pt-12 border-t border-slate-100">
+        <div class="md:col-span-2 space-y-8">
+            <div>
+                <h2 class="text-2xl font-black text-slate-900 tracking-tight mb-4 uppercase text-xs tracking-[0.3em] text-indigo-500">Sobre o procedimento</h2>
+                <div class="prose prose-slate text-slate-600 font-medium leading-relaxed">
+                    {# Aqui usamos o pipe 'safe' para permitir HTML vindo do banco (opcional) #}
+                    {{ service.content or "Nenhum detalhe adicional fornecido para este serviço." }}
+                </div>
+            </div>
+
+            {% if service.indications %}
+            <div class="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <h3 class="font-black text-slate-900 mb-4 flex items-center gap-2">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                    Indicações Principais
+                </h3>
+                <p class="text-sm text-slate-500 leading-relaxed font-medium">{{ service.indications }}</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-slate-900 text-white p-8 rounded-[2.5rem] shadow-xl">
+                <h4 class="text-[10px] font-black uppercase tracking-[0.2em] mb-6 text-indigo-400">Preparação</h4>
+                <ul class="space-y-4">
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span class="text-xs font-bold leading-tight">Chegue com 10 min de antecedência.</span>
+                    </li>
+                    <li class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-indigo-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span class="text-xs font-bold leading-tight">Cancelamentos permitidos até 24h antes.</span>
+                    </li>
+                </ul>
+            </div>
+
+            {% if service.contraindications %}
+            <div class="bg-red-50 p-8 rounded-[2.5rem] border border-red-100">
+                <h4 class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-red-500">Contraindicações</h4>
+                <p class="text-[11px] text-red-700 font-bold leading-relaxed">{{ service.contraindications }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</div>
+{% endblock %}
