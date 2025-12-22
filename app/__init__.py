@@ -3,6 +3,11 @@ from flask import Flask
 from app.config import Config
 from app.extensions import db, login_manager, migrate, mail, csrf
 from app.models import User # Importe o modelo User para o loader
+from flask import Blueprint
+
+admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
+from app.admin import routes
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)

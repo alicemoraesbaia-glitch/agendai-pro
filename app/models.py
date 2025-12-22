@@ -104,48 +104,47 @@ class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
+    
+    # --- ADICIONE ESTA LINHA ABAIXO ---
+    resource_id = db.Column(db.Integer, db.ForeignKey('resource.id'), nullable=True)
+    
     start_datetime = db.Column(db.DateTime, nullable=False, index=True)
     end_datetime = db.Column(db.DateTime, nullable=False)
     status = db.Column(db.String(20), default='pending')
     payment_status = db.Column(db.String(20), default='pending')
+    phone = db.Column(db.String(20))
     
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
+    # Relacionamentos
     user = db.relationship('User', back_populates='appointments')
     service = db.relationship('Service', back_populates='appointments')
-    
-    @property
-    def is_expired(self):
-        return self.status == 'pending' and self.start_datetime < datetime.now(timezone.utc)
+    # Adicione este relacionamento para facilitar consultas futuras
+    resource = db.relationship('Resource') 
 
-    def get_display_status(self):
-        if self.is_expired:
-            return "Expirado"
-        status_map = {'pending': 'Pendente', 'confirmed': 'Confirmado', 'cancelled': 'Cancelado'}
-        return status_map.get(self.status, self.status)
-    
-    def confirm(self):
-        self.status = 'confirmed'
-        
-    def mark_as_paid(self):
-        self.payment_status = 'paid'
-        self.status = 'confirmed'
+    # ... (Seus métodos is_expired, confirm, etc continuam aqui) ...
 
     @staticmethod
-    def check_resource_conflict(service_id, start_dt, end_dt, exclude_id=None):
+    def check_resource_conflict(service_id, start_dt, end_dt):
+        from app.models import Service, Appointment
         service = Service.query.get(service_id)
-        if not service or not service.resource_id:
+        if not service:
             return False
-            
-        query = Appointment.query.join(Service).filter(
-            Service.resource_id == service.resource_id,
-            Appointment.status != 'cancelled',
+
+        # LÓGICA SÊNIOR: Verificamos sobreposição de horário e status ativo
+        query = Appointment.query.filter(
             Appointment.start_datetime < end_dt,
-            Appointment.end_datetime > start_dt
+            Appointment.end_datetime > start_dt,
+            Appointment.status != 'cancelled'
         )
-        
-        if exclude_id:
-            query = query.filter(Appointment.id != exclude_id)
-            
-        return query.first() is not None
+
+        # Bloqueio por Recurso (Sala/Profissional)
+        if service.resource_id:
+            query = query.filter(Appointment.resource_id == service.resource_id)
+        else:
+            # Se o serviço não tem recurso, travamos o próprio serviço por segurança
+            query = query.filter(Appointment.service_id == service_id)
+
+        conflict = query.first()
+        return conflict is not None

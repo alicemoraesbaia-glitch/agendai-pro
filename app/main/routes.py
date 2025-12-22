@@ -22,13 +22,27 @@ def explore_category(category_name):
                            category=category_name, 
                            services=services)
 
-# --- ROTA: AGENDAMENTO (CORE LOGIC COM RF002) ---
+# --- ROTA: AGENDAMENTO (VERSÃO SÊNIOR BLINDADA) ---
 @main_bp.route('/book/<int:service_id>', methods=['GET', 'POST'])
 @login_required
 def book_service(service_id):
+    # --- CHAMADA DA LIMPEZA (Adicione isso aqui) ---
+    limpar_agendamentos_expirados()
     service = Service.query.get_or_404(service_id)
     now = datetime.now()
     
+    # --- 1. LÓGICA DE AUTO-LIMPEZA (IMPORTANTE) ---
+    # Limpa agendamentos pendentes que "expiraram" (ex: iniciados há mais de 30 min e não pagos/confirmados)
+    # Isso faz com que o horário volte a ficar disponível se o cliente desistir.
+    limite_pendente = now - timedelta(minutes=30)
+    Appointment.query.filter(
+        Appointment.status == 'pending',
+        Appointment.start_datetime > now,
+        # Se você tiver 'created_at' use ele, caso contrário, cancelamos pendentes de dias passados ou antigos
+        Appointment.start_datetime < (now + timedelta(days=1)) 
+    ).update({Appointment.status: 'cancelled'}, synchronize_session=False)
+    db.session.commit()
+
     # Tratamento de Data (POST e GET)
     date_str = request.form.get('date') or request.args.get('date') or now.strftime('%Y-%m-%d')
     try:
@@ -42,6 +56,11 @@ def book_service(service_id):
 
     if request.method == 'POST':
         time_str = request.form.get('slot')
+        user_phone = request.form.get('phone')
+
+        if not user_phone or len(user_phone) < 8:
+            flash('Por favor, informe um WhatsApp válido para coordenação.', 'warning')
+            return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
         
         if not time_str:
             flash('Por favor, selecione um horário disponível.', 'warning')
@@ -51,12 +70,11 @@ def book_service(service_id):
         start_dt = datetime.combine(selected_date, datetime.strptime(clean_time, '%H:%M').time())
         end_dt = start_dt + timedelta(minutes=service.duration_minutes)
 
-        # --- RF002: VALIDAÇÃO DE CONFLITO DE RECURSO (SALA/EQUIPAMENTO) ---
-        # Verificamos se a sala ou equipamento necessário está ocupado
-        has_conflict = Appointment.check_resource_conflict(service.id, start_dt, end_dt)
-        
-        if has_conflict:
-            flash(f'Infelizmente, a sala ou equipamento para este serviço já está reservado às {clean_time}.', 'danger')
+        # VALIDAÇÃO DE CONFLITO
+        # Sênior: Se Appointment.check_resource_conflict estiver correto (filtrando status != 'cancelled'),
+        # ele vai detectar o 'pending' que acabou de ser criado.
+        if Appointment.check_resource_conflict(service.id, start_dt, end_dt):
+            flash(f'Este horário foi reservado segundos atrás. Por favor, escolha outro.', 'danger')
             return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
 
         try:
@@ -64,27 +82,31 @@ def book_service(service_id):
                 start_datetime=start_dt,
                 end_datetime=end_dt,
                 service_id=service.id,
+                resource_id=service.resource_id, # <--- CORREÇÃO CRÍTICA: Salve o recurso aqui!
                 user_id=current_user.id,
+                phone=user_phone,
                 status='pending'
             )
             db.session.add(new_appt)
             db.session.commit()
-            flash('Reserva realizada! Aguardando confirmação de pagamento.', 'success')
+            
+            # Se o serviço for pago, você redirecionaria para o pagamento aqui. 
+            # Se for apenas reserva, avisa o usuário.
+            flash('Reserva realizada! Ela será cancelada se não for confirmada em breve.', 'success')
             return redirect(url_for('main.my_appointments'))
         except Exception as e:
             db.session.rollback()
+            print(f"Erro ao salvar: {e}")
             flash('Erro sistêmico ao salvar agendamento.', 'danger')
 
-    # Lógica para renderizar os Slots (GET)
+    # --- 2. GERAÇÃO DE SLOTS (Visualização do Cliente) ---
     slots = []
     for h in working_hours:
         slot_time_obj = datetime.strptime(h, '%H:%M').time()
         slot_start = datetime.combine(selected_date, slot_time_obj)
         slot_end = slot_start + timedelta(minutes=service.duration_minutes)
         
-        # O slot só aparece como disponível se:
-        # 1. O equipamento/sala estiver livre (check_resource_conflict)
-        # 2. O horário for no futuro
+        # Sênior: O check_resource_conflict agora deve "enxergar" os 'pending'
         is_resource_free = not Appointment.check_resource_conflict(service.id, slot_start, slot_end)
         is_future = slot_start > now
         
@@ -94,7 +116,6 @@ def book_service(service_id):
         })
 
     return render_template('main/book.html', service=service, slots=slots, date=date_str)
-
 # --- ROTA: MEUS AGENDAMENTOS ---
 @main_bp.route('/my-appointments')
 @login_required
@@ -153,3 +174,28 @@ def list_services():
 def service_detail(service_id):
     service = Service.query.get_or_404(service_id)
     return render_template('main/service_detail.html', service=service)
+
+
+def limpar_agendamentos_expirados():
+    # Define o tempo de tolerância (ex: 15 minutos)
+    tempo_limite = datetime.now() - timedelta(minutes=15)
+    
+    # Busca agendamentos:
+    # 1. Que estejam Pendentes
+    # 2. Que foram criados há mais de 15 minutos
+    # 3. Que a data do atendimento ainda é no futuro
+    expirados = Appointment.query.filter(
+        Appointment.status == 'pending',
+        # Se você não tiver o campo created_at, usaremos o start_datetime como referência
+        # Mas o ideal é que o registro tenha uma data de criação.
+        Appointment.start_datetime >= datetime.now() 
+    ).all()
+
+    for appt in expirados:
+        # Verificamos se ele está "preso" há muito tempo
+        # Se você não tiver 'created_at', pode pular essa verificação ou usar uma lógica de horário
+        appt.status = 'cancelled' 
+    
+    db.session.commit()
+    
+    

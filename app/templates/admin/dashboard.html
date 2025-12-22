@@ -1,234 +1,201 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="space-y-8 pb-12">
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 px-2">
+<div class="space-y-6 pb-12 animate-in fade-in duration-500">
+    
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-2">
         <div>
-            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-1 block">Visão Administrativa</span>
-            <h1 class="text-3xl font-black text-slate-900 tracking-tight italic">Performance <span class="text-indigo-600 font-medium">Global</span></h1>
+            <h1 class="text-3xl font-black text-slate-900 tracking-tight italic">Painel de <span class="text-indigo-600 font-medium">Controle</span></h1>
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">Gestão inteligente de fluxo e faturamento</p>
         </div>
-        <div class="bg-white px-4 py-2 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
-            <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-            <p class="text-slate-900 font-bold text-xs">{{ now.strftime('%d de %B, %Y') if now else 'Hoje' }}</p>
+        
+        <div class="flex gap-3">
+            <div class="text-right hidden md:block mr-4">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hoje</p>
+                <p class="text-sm font-bold text-slate-900">{{ now.strftime('%d de %b, %Y') }}</p>
+            </div>
+            <a href="{{ url_for('admin.list_all_appointments') }}" class="px-5 py-2.5 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-2">
+                Agenda Completa
+            </a>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div class="bg-indigo-600 rounded-[2rem] p-7 text-white shadow-xl shadow-indigo-100 relative overflow-hidden group">
-            <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-            <p class="text-[10px] font-black uppercase tracking-widest opacity-70">Receita Total</p>
-            <h2 class="text-3xl font-black mt-1 tracking-tighter">R$ {{ "%.2f"|format(total_revenue if total_revenue else 0) }}</h2>
-        </div>
-
-        <div class="bg-white rounded-[2rem] p-7 border border-slate-100 shadow-sm">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Agendamentos</p>
-            <h2 class="text-3xl font-black text-slate-900 mt-1 tracking-tighter">{{ total_appointments if total_appointments else 0 }}</h2>
-            <p class="text-[10px] text-indigo-500 font-bold mt-2 uppercase">Histórico Geral</p>
-        </div>
-
-        <div class="bg-white rounded-[2rem] p-7 border border-slate-100 shadow-sm">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ticket Médio</p>
-            {% set total_appts = total_appointments if total_appointments and total_appointments > 0 else 0 %}
-            {% set revenue = total_revenue if total_revenue else 0 %}
-            {% set avg = (revenue / total_appts) if total_appts > 0 else 0 %}
-            <h2 class="text-3xl font-black text-slate-900 mt-1 tracking-tighter">R$ {{ "%.2f"|format(avg) }}</h2>
-            <p class="text-[10px] text-slate-400 font-bold mt-2 uppercase italic">Média por cliente</p>
-        </div>
-
-        <div class="bg-white rounded-[2rem] p-7 border border-slate-100 shadow-sm flex flex-col justify-between">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Infraestrutura</p>
-            <div class="flex items-center gap-2">
-                <h2 class="text-2xl font-black text-slate-900 tracking-tighter">Estável</h2>
-                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded-lg">100%</span>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+        
+        <div class="bg-indigo-600 rounded-[2rem] p-6 text-white shadow-xl shadow-indigo-100 flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-widest opacity-70">Agenda Hoje</p>
+                <h2 class="text-4xl font-black mt-1">{{ services_today|length }}</h2>
             </div>
-            <div class="mt-2 h-1 w-full bg-slate-50 rounded-full overflow-hidden">
-                <div class="bg-emerald-500 h-full w-full"></div>
+            <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-[2rem] p-6 border border-emerald-100 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Faturamento Hoje</p>
+                <h2 class="text-3xl font-black text-slate-900 mt-1">R$ {{ "%.2f"|format(revenue_today) }}</h2>
+            </div>
+            <div class="w-11 h-11 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center">
+                <span class="font-black text-xs">R$</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-[2rem] p-6 border border-amber-100 shadow-sm flex items-center justify-between">
+            <div>
+                <p class="text-[10px] font-black text-amber-500 uppercase tracking-widest">Aguardando Resposta</p>
+                {% set pendentes = appointments|selectattr('status', 'equalto', 'pending')|list %}
+                <h2 class="text-4xl font-black text-slate-900 mt-1">{{ pendentes|length }}</h2>
+            </div>
+            <div class="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.268 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            </div>
+        </div>
+
+        <div class="bg-slate-900 rounded-[2rem] p-6 text-white shadow-xl flex items-center justify-between">
+            <div class="min-w-0">
+                <p class="text-[10px] font-black text-indigo-400 uppercase tracking-widest italic">Próximo</p>
+                {% if services_today %}
+                    <h2 class="text-lg font-black mt-1 truncate">{{ services_today[0].user.name or services_today[0].user.username }}</h2>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tight">{{ services_today[0].start_datetime.strftime('%H:%M') }}</p>
+                {% else %}
+                    <h2 class="text-lg font-black mt-1 text-slate-500 italic">Livre</h2>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2 bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm">
-            <div class="flex justify-between items-center mb-8">
-                <h3 class="text-lg font-black text-slate-900 tracking-tight italic">Fluxo de <span class="text-indigo-600 font-medium">Demanda</span></h3>
-                <span class="text-[9px] font-black uppercase text-slate-400 tracking-widest bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">Últimos 7 dias</span>
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        
+        <div class="lg:col-span-3 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+            <div class="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+                <div>
+                    <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">Fluxo de Hoje</h3>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">Acompanhamento de presença em tempo real</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="flex h-2 w-2 relative">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-[10px] font-black text-slate-500 uppercase">Live</span>
+                </div>
             </div>
-            <div class="h-[320px]">
-                <canvas id="performanceChart"></canvas>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <tbody class="divide-y divide-slate-50">
+                        {% for appt in services_today %}
+                        <tr class="hover:bg-slate-50/80 transition-all group">
+                            <td class="px-8 py-5">
+                                <div class="flex items-center gap-4">
+                                    <div class="text-xs font-black {% if appt.status == 'cancelled' %}text-slate-300 line-through{% else %}text-indigo-600{% endif %}">
+                                        {{ appt.start_datetime.strftime('%H:%M') }}
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-900 capitalize leading-none">{{ appt.user.name or appt.user.username }}</p>
+                                        <p class="text-[9px] text-slate-400 font-bold uppercase mt-1">{{ appt.service.name }}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-8 py-5">
+                                {% if appt.status == 'confirmed' %}
+                                    <span class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase">Confirmado</span>
+                                {% elif appt.status == 'in_progress' %}
+                                    <span class="px-3 py-1 bg-indigo-600 text-white rounded-lg text-[9px] font-black uppercase animate-pulse">Em Atendimento</span>
+                                {% elif appt.status == 'cancelled' %}
+                                    <span class="px-3 py-1 bg-red-50 text-red-400 rounded-lg text-[9px] font-black uppercase">Cancelado</span>
+                                {% else %}
+                                    <span class="px-3 py-1 bg-slate-100 text-slate-400 rounded-lg text-[9px] font-black uppercase">{{ appt.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-8 py-5 text-right">
+                                <div class="flex justify-end gap-2">
+                                    {% if appt.status == 'confirmed' %}
+                                    <form action="{{ url_for('admin.update_status', id=appt.id, new_status='in_progress') }}" method="POST">
+                                        <button title="Chamar para Atendimento" class="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    
+                                    {% set wpp_msg = "Olá " ~ appt.user.name ~ "! Confirmamos seu horário hoje às " ~ appt.start_datetime.strftime('%H:%M') %}
+                                    <a href="https://wa.me/{{ appt.user.phone or '' }}?text={{ wpp_msg | urlencode }}" target="_blank" class="p-2 bg-slate-100 text-slate-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-all">
+                                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="px-8 py-20 text-center">
+                                <p class="text-xs font-black text-slate-300 uppercase tracking-[0.2em]">Nenhum agendamento para hoje</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden flex flex-col">
-            <div class="absolute top-0 right-0 p-8 opacity-10">
-                <svg class="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+        <div class="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm flex flex-col justify-between">
+            <div>
+                <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest mb-6 italic">Volume de <span class="text-indigo-600">Demanda</span></h3>
+                <div class="h-[180px]">
+                    <canvas id="performanceChart"></canvas>
+                </div>
             </div>
-            <h3 class="text-sm font-black mb-6 uppercase tracking-widest text-indigo-400 italic">Agenda de Hoje</h3>
-            <div class="space-y-5 flex-grow overflow-y-auto pr-2 custom-scrollbar">
-                {% for appt in services_today %}
-                <div class="flex items-center gap-4 group">
-                    <div class="text-[10px] font-black text-slate-500 group-hover:text-indigo-400 transition-colors">{{ appt.start_datetime.strftime('%H:%M') }}</div>
-                    <div class="h-8 w-[2px] bg-slate-800 rounded-full"></div>
-                    <div class="min-w-0">
-                        <p class="text-xs font-bold truncate">{{ appt.user.name if appt.user.name else appt.user.username }}</p>
-                        <p class="text-[9px] text-slate-500 uppercase font-bold tracking-tighter truncate">{{ appt.service.name }}</p>
+            
+            <div class="mt-8 pt-6 border-t border-slate-50">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 text-center">Acumulado Histórico</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="p-4 bg-slate-50 rounded-2xl text-center">
+                        <p class="text-lg font-black text-slate-900">{{ total_appointments }}</p>
+                        <p class="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Total Consultas</p>
+                    </div>
+                    <div class="p-4 bg-indigo-50 rounded-2xl text-center">
+                        <p class="text-lg font-black text-indigo-600">R$ {{ "%.0f"|format(total_revenue) }}</p>
+                        <p class="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">Receita Total</p>
                     </div>
                 </div>
-                {% else %}
-                <div class="text-center py-12">
-                    <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest italic">Nenhum cliente para hoje</p>
-                </div>
-                {% endfor %}
             </div>
-            <a href="{{ url_for('admin.list_all_appointments') }}" class="mt-8 py-4 bg-indigo-600 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-white hover:text-slate-900 transition-all text-center">Ver Agenda Total</a>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-        <div class="px-8 py-6 border-b border-slate-50 flex justify-between items-center">
-            <h3 class="text-lg font-black text-slate-900 italic">Gestão de <span class="text-indigo-600 font-medium">Agendamentos</span></h3>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left">
-                <thead>
-                    <tr class="bg-slate-50/50">
-                        <th class="px-8 py-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Cliente</th>
-                        <th class="px-8 py-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Serviço</th>
-                        <th class="px-8 py-4 text-[9px] font-black uppercase text-slate-400 tracking-widest">Cronograma</th>
-                        <th class="px-8 py-4 text-[9px] font-black uppercase text-slate-400 tracking-widest text-right">Ações</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                    {% for appt in appointments %}
-                    <tr class="hover:bg-slate-50/80 transition-all group">
-                        <td class="px-8 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-[11px] font-black text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
-                                    {% set initial = appt.user.name[0] if appt.user.name else appt.user.username[0] %}
-                                    {{ initial | upper }}
-                                </div>
-                                <div>
-                                    <p class="text-sm font-bold text-slate-900 leading-none capitalize">{{ appt.user.name if appt.user.name else appt.user.username }}</p>
-                                    <p class="text-[9px] text-slate-400 font-bold mt-1 uppercase tracking-tighter">ID: #{{ appt.id }}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-8 py-4">
-                            <span class="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[9px] font-black uppercase tracking-tight group-hover:bg-indigo-100 group-hover:text-indigo-700 transition-colors">
-                                {{ appt.service.name }}
-                            </span>
-                        </td>
-                        <td class="px-8 py-4">
-                            <p class="text-[11px] font-black text-slate-700 tracking-tight">{{ appt.start_datetime.strftime('%d/%m • %H:%M') }}</p>
-                        </td>
-                        <td class="px-8 py-4 text-right">
-                            <div class="flex justify-end gap-2">
-                                {% if appt.status == 'pending' and not appt.is_expired %}
-                                    <form action="{{ url_for('admin.update_status', id=appt.id, new_status='confirmed') }}" method="POST" class="inline">
-                                        {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>{% endif %}
-                                        <button type="submit" title="Confirmar" class="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-500 hover:text-white transition-all shadow-sm border border-emerald-100">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
-                                        </button>
-                                    </form>
-                                    <form action="{{ url_for('admin.update_status', id=appt.id, new_status='cancelled') }}" method="POST" class="inline">
-                                        {% if csrf_token %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>{% endif %}
-                                        <button type="submit" title="Rejeitar" class="p-2.5 bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-sm border border-red-100">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                                        </button>
-                                    </form>
-                                {% else %}
-                                    <span class="text-[9px] font-black uppercase tracking-[0.1em] px-3 py-1.5 rounded-lg border
-                                        {{ 'text-emerald-500 bg-emerald-50 border-emerald-100' if appt.status == 'confirmed' else 'text-slate-300 bg-slate-50 border-slate-100 italic' }}">
-                                        {{ 'Confirmado' if appt.status == 'confirmed' else 'Finalizado/Cancelado' }}
-                                    </span>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    const ctx = document.getElementById('performanceChart').getContext('2d');
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        const labels = JSON.parse('{{ chart_labels|tojson|safe }}');
+        const dataPoints = JSON.parse('{{ chart_data|tojson|safe }}');
 
-    // 1. Definição dos dados com tratamento para evitar erros no editor (VS Code)
-    const labels = JSON.parse('{{ (chart_labels if chart_labels else []) | tojson | safe }}');
-    const dataPoints = JSON.parse('{{ (chart_data if chart_data else []) | tojson | safe }}');
-
-    // 2. Criação de um gradiente para o fundo do gráfico
-    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(79, 70, 229, 0.2)');   // Indigo suave no topo
-    gradient.addColorStop(1, 'rgba(79, 70, 229, 0)');     // Transparente na base
-
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Agendamentos',
-                data: dataPoints,
-                fill: true,
-                backgroundColor: gradient,
-                borderColor: '#4f46e5', // Indigo 600
-                borderWidth: 3,
-                tension: 0.4,           // Curva suave (SaaS style)
-                pointRadius: 4,
-                pointBackgroundColor: '#4f46e5',
-                pointBorderColor: '#fff',
-                pointBorderWidth: 2,
-                pointHoverRadius: 6,
-                pointHoverBackgroundColor: '#4f46e5'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false // Remove a legenda para um look mais clean
-                },
-                tooltip: {
-                    backgroundColor: '#1e293b', // Slate 800
-                    titleFont: { size: 13, weight: 'bold' },
-                    padding: 12,
-                    cornerRadius: 12,
-                    displayColors: false
-                }
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataPoints,
+                    fill: true,
+                    backgroundColor: 'rgba(79, 70, 229, 0.05)',
+                    borderColor: '#4f46e5',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#4f46e5'
+                }]
             },
-            scales: {
-                x: {
-                    grid: {
-                        display: false // Remove linhas verticais
-                    },
-                    ticks: {
-                        font: { size: 11, weight: '600' },
-                        color: '#94a3b8' // Slate 400
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    grid: {
-                        color: 'rgba(241, 245, 249, 1)', // Slate 100 suave
-                        drawBorder: false
-                    },
-                    ticks: {
-                        font: { size: 11, weight: '600' },
-                        color: '#94a3b8',
-                        stepSize: 1
-                    }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' } } },
+                    y: { display: false, beginAtZero: true }
                 }
             }
-        }
+        });
     });
 </script>
-
-<style>
-    .custom-scrollbar::-webkit-scrollbar { width: 3px; }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-</style>
 {% endblock %}
