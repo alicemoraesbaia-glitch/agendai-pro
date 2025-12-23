@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-12">
+    <div class="text-center mb-12">
+        <h2 class="text-3xl font-black text-slate-900 tracking-tighter italic">Nossa <span class="text-indigo-600">Equipe</span></h2>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for pro in professionals %}
+        <div class="group bg-white rounded-[2.5rem] border border-slate-100 p-6 text-center hover:shadow-xl transition-all">
+            <img src="https://ui-avatars.com/api/?name={{ pro.name }}&background=6366f1&color=fff&size=128" 
+                 class="w-24 h-24 mx-auto rounded-[2rem] mb-4 border-4 border-white shadow-md">
+            <span class="text-[8px] font-black uppercase text-indigo-500 tracking-widest">{{ pro.category }}</span>
+            <h3 class="text-lg font-black text-slate-800 mt-1">{{ pro.name }}</h3>
+            <div class="mt-6 border-t border-slate-50 pt-4">
+                <p class="text-[10px] text-slate-400 font-bold uppercase mb-4">{{ pro.services|length }} Serviços Disponíveis</p>
+                <a href="{{ url_for('main.list_services') }}?q={{ pro.name }}" class="bg-slate-900 text-white px-6 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all block">
+                    Ver Agenda
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

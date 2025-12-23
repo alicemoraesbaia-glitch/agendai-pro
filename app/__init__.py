@@ -31,6 +31,7 @@ def create_app(config_class=Config):
         return User.query.get(int(user_id))
     # --------------------------------------
     
+    
     # IMPORTANTE: render_as_batch=True permite migrações no SQLite
     migrate.init_app(app, db, render_as_batch=True)
     

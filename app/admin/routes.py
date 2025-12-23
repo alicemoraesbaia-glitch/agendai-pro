@@ -7,6 +7,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
 from functools import wraps
+from flask import Blueprint, render_template
+
+
+from flask import Blueprint, render_template
+# ... outras importações ...
+
+# Esta linha deve existir antes de usar @admin.route
+admin = Blueprint('admin', __name__)
 
 # --- DECORADOR DE SEGURANÇA (O PORTEIRO) ---
 def admin_required(f):
@@ -162,16 +170,26 @@ def list_all_appointments():
     ).order_by(Appointment.start_datetime.desc()).all()
     return render_template('admin/all_appointments.html', appointments=all_appts)
 
+
 @admin_bp.route('/appointment/<int:id>/status/<string:new_status>', methods=['POST'])
 @login_required
 @admin_required
 def update_status(id, new_status):
     appt = Appointment.query.get_or_404(id)
     
+    # --- LÓGICA SÊNIOR: Captura o horário real de início ---
+    if new_status == 'in_progress':
+        # Se estamos chamando agora, gravamos o horário atual
+        from datetime import datetime
+        appt.actual_start = datetime.now()
+    
+    # Dicionário completo de mensagens
     messages = {
         'confirmed': f'Consulta de {appt.user.name} confirmada!',
-        'cancelled': f'A consulta de {appt.user.name} foi cancelada.',
-        'completed': f'Atendimento de {appt.user.name} finalizado!'
+        'arrived': f'{appt.user.name} acabou de chegar na recepção.',
+        'in_progress': f'Atendimento de {appt.user.name} iniciado (Aparecerá na TV!).',
+        'completed': f'Atendimento de {appt.user.name} finalizado com sucesso!',
+        'cancelled': f'A consulta de {appt.user.name} foi cancelada.'
     }
 
     if new_status in messages:
@@ -179,7 +197,9 @@ def update_status(id, new_status):
         db.session.commit()
         flash(messages.get(new_status), 'success')
     else:
-        flash('Status inválido.', 'danger')
+        appt.status = new_status
+        db.session.commit()
+        flash('Status atualizado.', 'info')
         
     return redirect(request.referrer or url_for('admin.dashboard'))
 
@@ -207,32 +227,43 @@ def list_services():
 @login_required
 @admin_required
 def manage_service(id=None):
+    # Se houver ID, é edição. Se não, service é None (novo cadastro).
     service = Service.query.get_or_404(id) if id else None
+    
+    # Carrega os recursos (médicos/salas) para o select do formulário
     resources = Resource.query.all() 
     
     if request.method == 'POST':
         try:
-            price_reais = float(request.form.get('price', 0))
-            price_cents = int(round(price_reais * 100))
+            # Tratamento de preço: aceita vírgula ou ponto
+            price_raw = request.form.get('price', '0').replace(',', '.')
+            price_cents = int(round(float(price_raw) * 100))
             
+            # Se não existe serviço (id é None), cria uma nova instância
             if not service:
                 service = Service()
                 db.session.add(service)
             
+            # Atribuição de valores do formulário
             service.name = request.form.get('name')
             service.description = request.form.get('description')
-            service.category = request.form.get('category')
-            service.duration_minutes = int(request.form.get('duration'))
+            service.duration_minutes = int(request.form.get('duration', 30))
             service.price_cents = price_cents
             service.active = True if request.form.get('active') else False
-            service.resource_id = request.form.get('resource_id')
+            
+            # Vínculo com Médico/Sala (Resource)
+            res_id = request.form.get('resource_id')
+            service.resource_id = int(res_id) if res_id and res_id != "" else None
             
             db.session.commit()
-            flash(f'Serviço "{service.name}" atualizado.', 'success')
-            return redirect(url_for('admin.list_services'))
+            flash(f'Serviço "{service.name}" salvo com sucesso!', 'success')
+            # Redireciona para a vitrine para você ver o resultado imediato
+            return redirect(url_for('main.services')) 
+            
         except Exception as e:
             db.session.rollback()
-            flash('Erro ao salvar serviço.', 'danger')
+            print(f"Erro ao salvar: {e}")
+            flash('Erro ao processar os dados do serviço.', 'danger')
     
     title = "Editar Serviço" if id else "Novo Serviço"
     return render_template('admin/service_form.html', service=service, title=title, resources=resources)
@@ -286,3 +317,101 @@ def tv_panel():
         espera=fila_espera, 
         now=now
     )
+    
+    
+# --- PAINEL TV (A versão correta com filtros inteligentes) ---
+@admin_bp.route('/painel-tv') # Use admin_bp para manter consistência
+@login_required
+@admin_required
+def painel_tv():
+    # Pegamos apenas o que é relevante para o público ver na TV
+    agora = datetime.now()
+    
+    # 1. Atendimentos que estão acontecendo AGORA (Status 'in_progress')
+    em_curso = Appointment.query.filter_by(status='in_progress').options(
+        joinedload(Appointment.user), 
+        joinedload(Appointment.service)
+    ).all()
+    
+    # 2. Próximos da fila (Confirmados ou Pendentes do futuro)
+    proximos = Appointment.query.filter(
+        Appointment.status.in_(['confirmed', 'pending']),
+        Appointment.start_datetime >= agora
+    ).order_by(Appointment.start_datetime.asc()).limit(5).all()
+
+    return render_template('admin/painel_tv.html', 
+                           em_curso=em_curso, 
+                           proximos=proximos)
+
+# --- DASHBOARD DE OCUPAÇÃO (A versão operacional clara) ---
+@admin_bp.route('/dashboard-ocupacao')
+@login_required
+@admin_required
+def occupation_dashboard():
+    now = datetime.now()
+    hoje = now.date()
+    
+    # Pegamos todos de hoje para alimentar os cards e a tabela
+    appts_hoje = Appointment.query.filter(
+        db.func.date(Appointment.start_datetime) == hoje
+    ).options(joinedload(Appointment.user), joinedload(Appointment.service)).all()
+
+    # Passamos a lista completa para o template usar os filtros do Jinja
+    return render_template('admin/occupation_dashboard.html', 
+                           appointments=appts_hoje, # Mudei de 'appts' para 'appointments' para bater com o HTML que te mandei antes
+                           now=now)
+    
+@admin_bp.route('/resources/new', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def new_resource():
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        category = request.form.get('category', '').strip()
+        
+        if not name:
+            flash('O nome é obrigatório.', 'warning')
+            return render_template('admin/resource_form.html', resource=None)
+
+        try:
+            new_res = Resource(name=name, category=category)
+            db.session.add(new_res)
+            db.session.commit()
+            flash(f'Especialista {name} cadastrado com sucesso!', 'success')
+            return redirect(url_for('admin.list_resources'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao cadastrar recurso. Tente novamente.', 'danger')
+            
+    # Importante: Passar resource=None explicitamente
+    return render_template('admin/resource_form.html', resource=None)
+
+@admin_bp.route('/resource/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_resource(id):
+    resource = Resource.query.get_or_404(id)
+    if request.method == 'POST':
+        resource.name = request.form.get('name', '').strip()
+        resource.category = request.form.get('category', '').strip()
+        
+        try:
+            db.session.commit()
+            flash(f'Dados de {resource.name} atualizados!', 'success')
+            return redirect(url_for('admin.list_resources'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao atualizar os dados.', 'danger')
+            
+    return render_template('admin/resource_form.html', resource=resource)
+    
+    
+# Adicione ao final do seu arquivo de rotas admin
+@admin_bp.route('/resources')
+@login_required
+@admin_required
+def list_resources():
+    # Lista todos os médicos/salas cadastrados
+    resources = Resource.query.all()
+    return render_template('admin/resources_list.html', resources=resources)
+    return render_template('admin/resource_form.html', resource=resource)

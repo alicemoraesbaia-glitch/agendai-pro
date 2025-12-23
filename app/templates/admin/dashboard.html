@@ -1,6 +1,17 @@
 {% extends "base.html" %}
 
 {% block content %}
+{# BOTÃO DE OCUPAÇÃO EM TEMPO REAL #}
+<div class="mb-8">
+    <a href="{{ url_for('admin.occupation_dashboard') }}" 
+       class="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all">
+        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        Ver Ocupação em Tempo Real (Modo TV)
+    </a>
+</div>
+
 <div class="space-y-6 pb-12 animate-in fade-in duration-500">
     
     <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-2">

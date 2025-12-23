@@ -66,7 +66,7 @@ class Resource(db.Model):
     __tablename__ = 'resource'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
-    category = db.Column(db.String(50))  # 'Sala' ou 'Equipamento'
+    category = db.Column(db.String(50))  # Ex: 'Cardiologista', 'Sala 01', 'Dentista'
     
     services = db.relationship('Service', back_populates='resource', lazy=True)
 
@@ -80,20 +80,21 @@ class Service(db.Model):
     price_cents = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(50), nullable=False, default='Geral')
     
-    # Campos de Marketing e Conteúdo
+    # --- MANTIDOS: Seus campos de Marketing e Conteúdo ---
     content = db.Column(db.Text)          
     benefits = db.Column(db.Text)         
     indications = db.Column(db.Text)      
     contraindications = db.Column(db.Text)
     
-    # Controle de Status (index=True ajuda na performance de filtros no catálogo)
+    # Controle de Status
     active = db.Column(db.Boolean, default=True, index=True)
 
-    # Relacionamentos
+    # --- RELACIONAMENTOS (O Coração da Multi-Agenda) ---
+    # Sênior: É este resource_id que dirá se o serviço é do "Médico A" ou "Médico B"
     resource_id = db.Column(db.Integer, db.ForeignKey('resource.id'), nullable=True)
     resource = db.relationship('Resource', back_populates='services')
     
-    # Appointments (cascade ajuda a manter a integridade se um serviço for deletado)
+    # Appointments com cascade para segurança de dados
     appointments = db.relationship('Appointment', back_populates='service', lazy=True, cascade="all, delete-orphan")
 
     def __repr__(self):
@@ -104,47 +105,73 @@ class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     service_id = db.Column(db.Integer, db.ForeignKey('service.id'), nullable=False)
-    
-    # --- ADICIONE ESTA LINHA ABAIXO ---
+    # SÊNIOR: Importante para isolar as agendas por médico/sala
     resource_id = db.Column(db.Integer, db.ForeignKey('resource.id'), nullable=True)
     
     start_datetime = db.Column(db.DateTime, nullable=False, index=True)
+    actual_start = db.Column(db.DateTime) 
     end_datetime = db.Column(db.DateTime, nullable=False)
+    
     status = db.Column(db.String(20), default='pending')
     payment_status = db.Column(db.String(20), default='pending')
     phone = db.Column(db.String(20))
     
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     # Relacionamentos
     user = db.relationship('User', back_populates='appointments')
     service = db.relationship('Service', back_populates='appointments')
-    # Adicione este relacionamento para facilitar consultas futuras
-    resource = db.relationship('Resource') 
+    resource = db.relationship('Resource')
 
-    # ... (Seus métodos is_expired, confirm, etc continuam aqui) ...
+    def get_display_status(self):
+        """Retorna o texto amigável do status para o HTML"""
+        status_map = {
+            'pending': 'Pendente',
+            'confirmed': 'Confirmado',
+            'in_progress': 'Em Atendimento',
+            'completed': 'Concluído',
+            'cancelled': 'Cancelado'
+        }
+        return status_map.get(self.status, self.status.capitalize())
 
     @staticmethod
     def check_resource_conflict(service_id, start_dt, end_dt):
+        """
+        LÓGICA SÊNIOR: 
+        Permite agendamentos simultâneos DESDE QUE sejam em recursos diferentes.
+        """
         from app.models import Service, Appointment
         service = Service.query.get(service_id)
         if not service:
             return False
 
-        # LÓGICA SÊNIOR: Verificamos sobreposição de horário e status ativo
+        # Base da query: Horários que se sobrepõem e não estão cancelados
         query = Appointment.query.filter(
+            Appointment.status != 'cancelled',
             Appointment.start_datetime < end_dt,
-            Appointment.end_datetime > start_dt,
-            Appointment.status != 'cancelled'
+            Appointment.end_datetime > start_dt
         )
 
-        # Bloqueio por Recurso (Sala/Profissional)
+        # Se o serviço tem um médico/sala vinculado, checamos apenas a agenda dele
         if service.resource_id:
             query = query.filter(Appointment.resource_id == service.resource_id)
         else:
-            # Se o serviço não tem recurso, travamos o próprio serviço por segurança
+            # Se não tem recurso, ele trava o serviço globalmente (comportamento antigo)
             query = query.filter(Appointment.service_id == service_id)
 
         conflict = query.first()
         return conflict is not None
+
+    @staticmethod
+    def check_user_conflict(user_id, start_dt, end_dt):
+        """Impede que o MESMO CLIENTE marque duas coisas ao mesmo tempo"""
+        from app.models import Appointment
+        conflict = Appointment.query.filter(
+            Appointment.user_id == user_id,
+            Appointment.status != 'cancelled',
+            Appointment.start_datetime < end_dt,
+            Appointment.end_datetime > start_dt
+        ).first()
+        return conflict is not None
+    

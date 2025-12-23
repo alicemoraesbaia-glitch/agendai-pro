@@ -90,13 +90,20 @@
                 </div>
             </div>
 
+            {# --- BLOCO DO CRONÔMETRO PARA PAGAMENTO PENDENTE --- #}
             {% if appt.status == 'pending' and not appt.is_expired %}
             <div class="mt-4 pt-4 border-t border-dashed border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    <div class="w-8 h-8 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500 animate-pulse">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </div>
-                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Pagamento pendente para garantir a vaga</p>
+                    <div>
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Pagamento pendente para garantir a vaga</p>
+                        {# O cronômetro aparece aqui #}
+                        <p class="text-[9px] text-amber-600 font-black uppercase">
+                            Expira em: <span class="countdown text-xs" data-expire="{{ (appt.created_at + timedelta(minutes=15)).isoformat() }}">--:--</span>
+                        </p>
+                    </div>
                 </div>
                 
                 <form action="{{ url_for('main.simulate_payment', appt_id=appt.id) }}" method="POST" class="w-full md:w-auto">
@@ -120,4 +127,31 @@
         {% endfor %}
     </div>
 </div>
+
+{# SCRIPT SÊNIOR PARA CONTAGEM REGRESSIVA #}
+<script>
+    function updateCountdowns() {
+        document.querySelectorAll('.countdown').forEach(el => {
+            const expireDate = new Date(el.dataset.expire).getTime();
+            const now = new Date().getTime();
+            const diff = expireDate - now;
+
+            if (diff <= 0) {
+                el.innerHTML = "EXPIRADO";
+                el.classList.add('text-red-500');
+                // Opcional: recarregar a página para aplicar a limpeza do servidor
+                // window.location.reload(); 
+            } else {
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                el.innerHTML = `${minutes}m ${seconds}s`;
+            }
+        });
+    }
+
+    // Atualiza a cada segundo
+    setInterval(updateCountdowns, 1000);
+    // Executa imediatamente ao carregar
+    document.addEventListener('DOMContentLoaded', updateCountdowns);
+</script>
 {% endblock %}

@@ -53,6 +53,20 @@
                     </div>
                 </div>
 
+                <div class="space-y-2">
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Responsável ou Local (Opcional)</label>
+                    <select name="resource_id" 
+                            class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer">
+                        <option value="">Nenhum (Agenda Global)</option>
+                        {% for res in resources %}
+                            <option value="{{ res.id }}" {% if service and service.resource_id == res.id %}selected{% endif %}>
+                                {{ res.name }} - {{ res.category }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase ml-1">Vincule a um médico para ter agendas independentes</p>
+                </div>
+
                 <div class="flex items-center justify-between p-6 bg-emerald-50/50 rounded-3xl border border-emerald-100/50">
                     <div>
                         <p class="text-sm font-black text-slate-900 uppercase tracking-tight">Serviço Ativo</p>
