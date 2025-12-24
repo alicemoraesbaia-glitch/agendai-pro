@@ -2,7 +2,7 @@ from flask import render_template, request, flash, redirect, url_for, abort
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.admin import admin_bp
-from app.models import Appointment, Service, User, Resource
+from app.models import Appointment, Service, User, Resource, AuditLog
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from datetime import datetime, timedelta
@@ -226,15 +226,46 @@ def update_status(id, new_status):
         
     return redirect(request.referrer or url_for('admin.dashboard'))
 
+import logging # Sênior usa logs de arquivo também
+
+import json # Certifique-se de que o import está no topo do arquivo
+
 @admin_bp.route('/appointment/<int:id>/delete', methods=['POST'])
 @login_required
 @admin_required
 def delete_appointment(id):
     appt = Appointment.query.get_or_404(id)
-    db.session.delete(appt)
-    db.session.commit()
-    flash('Agendamento removido do histórico.', 'success')
-    return redirect(url_for('admin.list_all_appointments'))
+    
+    # 1. Primeiro criamos o dicionário (o snapshot)
+    data_snapshot = {
+        "servico": appt.service.name,
+        "data_hora": appt.start_datetime.strftime('%d/%m/%Y %H:%M'),
+        "cliente_id": appt.user_id,
+        "valor": f"R$ {appt.service.price_cents / 100:.2f}",
+        "status_final": appt.status
+    }
+
+    try:
+        # 2. AQUI ENTRA O AJUSTE SÊNIOR:
+        # O indent=4 cria as quebras de linha e espaços, deixando o JSON "bonito"
+        json_formatado = json.dumps(data_snapshot, indent=4, ensure_ascii=False)
+
+        log = AuditLog(
+            action='DELETAR_AGENDAMENTO',
+            details=json_formatado, # Salvamos a string já formatada
+            admin_email=current_user.email
+        )
+        
+        db.session.add(log)
+        db.session.delete(appt)
+        db.session.commit()
+        
+        flash('Agendamento removido com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Erro ao deletar agendamento.', 'danger')
+        
+    return redirect(request.referrer or url_for('admin.list_all_appointments'))
 
 # --- GESTÃO DE SERVIÇOS ---
 
@@ -449,3 +480,12 @@ def unlock_user(id):
     db.session.commit()
     flash(f'A conta de {user.name} foi desbloqueada com sucesso.', 'success')
     return redirect(url_for('admin.list_users'))
+
+@admin_bp.route('/logs/deletados')
+@login_required
+@admin_required
+def view_delete_logs():
+    # Busca os logs mais recentes primeiro
+    logs = AuditLog.query.order_by(AuditLog.created_at.desc()).all()
+    return render_template('admin/logs_deletados.html', logs=logs)
+

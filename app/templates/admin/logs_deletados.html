@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto animate-fade-in space-y-8 pb-12">
+    
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+        <div>
+            <div class="inline-flex items-center px-3 py-1 bg-red-50 rounded-full text-red-600 text-[9px] font-black uppercase tracking-widest mb-3 border border-red-100/50">
+                🛡️ Área de Segurança e Auditoria
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-none">
+                Logs de <span class="text-red-600 italic font-serif">Exclusão.</span>
+            </h1>
+            <p class="mt-2 text-slate-500 text-sm font-medium">Rastro completo de todos os agendamentos removidos do banco de dados.</p>
+        </div>
+
+        <a href="{{ url_for('admin.list_all_appointments') }}" 
+           class="inline-flex items-center justify-center bg-slate-100 text-slate-600 px-6 py-3.5 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-slate-200 transition-all active:scale-95">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+            </svg>
+            Voltar para Agenda
+        </a>
+    </div>
+
+    <div class="bg-white rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50/50 border-b border-slate-100">
+                        <th class="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Data do Incidente</th>
+                        <th class="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Admin Responsável</th>
+                        <th class="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Ação Realizada</th>
+                        <th class="p-6 text-[10px] font-black uppercase tracking-widest text-slate-400">Snapshot do Registro (JSON)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    {% for log in logs %}
+                    <tr class="hover:bg-slate-50/30 transition-colors group">
+                        <td class="p-6">
+                            <div class="flex flex-col">
+                                <span class="text-xs font-black text-slate-700">{{ log.created_at.strftime('%d/%m/%Y') }}</span>
+                                <span class="text-[10px] font-bold text-slate-400">{{ log.created_at.strftime('%H:%M:%S') }}</span>
+                            </div>
+                        </td>
+                        <td class="p-6">
+                            <div class="flex items-center gap-2">
+                                <div class="w-7 h-7 bg-indigo-50 rounded-lg flex items-center justify-center text-indigo-600 text-[10px] font-black">
+                                    {{ log.admin_email[0] | upper }}
+                                </div>
+                                <span class="text-xs font-bold text-indigo-600">{{ log.admin_email }}</span>
+                            </div>
+                        </td>
+                        <td class="p-6">
+                            <span class="px-2.5 py-1 bg-red-50 text-red-600 rounded-md text-[9px] font-black uppercase border border-red-100">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td class="p-6">
+                          <div class="relative group/code">
+                              <div class="bg-slate-900 rounded-xl p-4 font-mono text-[10px] text-emerald-400 leading-relaxed max-w-md overflow-hidden whitespace-pre-wrap">
+                                  {{ log.details }}
+                              </div>
+                              <div class="absolute inset-0 bg-slate-900/90 rounded-xl opacity-0 group-hover/code:opacity-100 transition-opacity flex items-center justify-center">
+                                  <span class="text-[9px] font-black text-white uppercase tracking-tighter">Dados Preservados</span>
+                              </div>
+                          </div>
+                      </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="p-20 text-center">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-slate-50 rounded-full mb-4">
+                                <svg class="w-8 h-8 text-slate-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <h3 class="text-slate-400 font-black uppercase text-xs tracking-widest">Nenhuma exclusão registrada até o momento</h3>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-center gap-2 text-slate-400 text-[9px] font-bold uppercase tracking-widest">
+        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        Registros criptografados e imutáveis por política de sistema
+    </div>
+</div>
+{% endblock %}

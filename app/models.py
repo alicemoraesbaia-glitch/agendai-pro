@@ -198,3 +198,13 @@ class Appointment(db.Model):
         ).first()
         return conflict is not None
     
+class AuditLog(db.Model):
+    __tablename__ = 'audit_logs'
+    id = db.Column(db.Integer, primary_key=True)
+    action = db.Column(db.String(50))  # Ex: 'DELETE_APPOINTMENT'
+    details = db.Column(db.Text)      # Informações do agendamento que sumiu
+    admin_email = db.Column(db.String(120))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<AuditLog {self.action} by {self.admin_email}>'

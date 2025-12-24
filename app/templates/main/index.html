@@ -11,8 +11,8 @@
         </h1>
 
         <div class="max-w-lg mx-auto px-4 mt-6"> 
-            <form action="{{ url_for('main.list_services') }}" method="GET" class="relative group">
-                <input type="text" name="q" placeholder="O que você busca hoje?" 
+            <form action="{{ url_for('main.index') }}" method="GET" class="relative group">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="O que você busca hoje?" 
                     class="w-full bg-white border-2 border-slate-100 py-3.5 pl-6 pr-28 rounded-2xl text-sm font-bold text-slate-700 focus:border-indigo-500 shadow-xl shadow-slate-200/40 transition-all outline-none">
                 <button type="submit" class="absolute right-1.5 top-1.5 bottom-1.5 bg-slate-900 hover:bg-indigo-600 text-white px-6 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">
                     Buscar
@@ -24,9 +24,19 @@
 
 <div class="max-w-7xl mx-auto px-4 mb-8">
     <div class="flex items-center justify-start gap-2 overflow-x-auto pb-4 scrollbar-hide border-b border-slate-50">
-        <button class="whitespace-nowrap px-5 py-2.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200">Todos</button>
-        {% for cat in ['Estética', 'Saúde', 'Fisioterapia', 'Massagem'] %}
-        <button class="whitespace-nowrap px-5 py-2.5 rounded-xl bg-white border border-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest hover:border-indigo-200 hover:text-indigo-600 transition-all italic">{{ cat }}</button>
+        
+        <a href="{{ url_for('main.index') }}" 
+           class="whitespace-nowrap px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
+           {{ 'bg-slate-900 text-white shadow-lg shadow-slate-200' if not active_category or active_category == 'Todos' else 'bg-white border border-slate-100 text-slate-500' }}">
+           Todos
+        </a>
+
+        {% for cat in categories %}
+        <a href="{{ url_for('main.index', category=cat) }}" 
+           class="whitespace-nowrap px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-200 hover:text-indigo-600 transition-all italic
+           {{ 'bg-slate-900 text-white shadow-lg' if active_category == cat else 'bg-white border border-slate-100 text-slate-500' }}">
+           {{ cat }}
+        </a>
         {% endfor %}
     </div>
 </div>
@@ -36,15 +46,24 @@
     {% for s in services %}
     <div class="group bg-white rounded-[2.2rem] border border-slate-100 p-3 hover:border-indigo-500/30 hover:shadow-[0_20px_50px_rgba(0,0,0,0.05)] transition-all duration-500 relative flex flex-col">
         
-        {% if loop.index == 1 %}
+        {% if loop.index == 1 and not active_category and not search_query %}
         <div class="absolute -top-2 -right-2 z-20 bg-amber-400 text-slate-900 px-3 py-1 rounded-lg font-black text-[8px] uppercase tracking-widest shadow-md border-2 border-white animate-bounce">
             🔥 Mais Procurado
         </div>
         {% endif %}
 
         <div class="relative h-44 rounded-[1.7rem] overflow-hidden mb-4">
-            <img src="{{ s.image_url if s.image_url else 'https://images.unsplash.com/photo-1512290923902-8a9f81dc206e?auto=format&fit=crop&q=80' }}" 
-                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+            {% if s.image_url %}
+                <img src="{{ url_for('static', filename='assets/img/services/' + s.image_url) }}" 
+                     alt="{{ s.name }}"
+                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                     onerror="this.onerror=null; this.src='/static/assets/img/services/cardio.png';">
+            {% else %}
+                <img src="/static/assets/img/services/cardio.png" 
+                     alt="Serviço"
+                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+            {% endif %}
+
             <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent opacity-60"></div>
             
             <span class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest text-slate-900">
@@ -77,6 +96,11 @@
                 </a>
             </div>
         </div>
+    </div>
+    {% else %}
+    <div class="col-span-full py-20 text-center">
+        <p class="text-slate-400 font-bold uppercase tracking-widest text-xs">Nenhum serviço encontrado para sua busca.</p>
+        <a href="{{ url_for('main.index') }}" class="text-indigo-600 font-black text-xs uppercase mt-4 inline-block underline">Ver todos os serviços</a>
     </div>
     {% endfor %}
 

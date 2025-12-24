@@ -7,12 +7,34 @@ from datetime import datetime, timedelta, timezone
 # --- ROTA: HOME (INDEX) ---
 @main_bp.route('/')
 def index():
-    # Buscamos categorias únicas para o sistema de "Exploração"
-    categories = db.session.query(Service.category).filter(Service.active==True).distinct().all()
-    services = Service.query.filter_by(active=True).all()
+    # 1. Pegamos os parâmetros da URL
+    query_param = request.args.get('q', '')
+    category_param = request.args.get('category', '')
+
+    # 2. Categorias para o menu (Corrigido o erro de variável local)
+    # Buscamos do banco primeiro com um nome diferente
+    categories_raw = db.session.query(Service.category).filter(Service.active==True).distinct().all()
+    # Agora sim criamos a lista final de strings
+    categories = [c[0] for c in categories_raw]
+
+    # 3. Base da busca de serviços
+    services_query = Service.query.filter_by(active=True)
+
+    # 4. Aplicação dos filtros
+    if query_param:
+        services_query = services_query.filter(Service.name.ilike(f'%{query_param}%'))
+
+    if category_param and category_param != 'Todos':
+        services_query = services_query.filter_by(category=category_param)
+
+    # 5. Executa a busca
+    services = services_query.all()
+
     return render_template('main/index.html', 
                            services=services, 
-                           categories=[c[0] for c in categories])
+                           categories=categories,
+                           active_category=category_param,
+                           search_query=query_param)
 
 # --- ROTA: EXPLORAR POR CATEGORIA (Novo Requisito) ---
 @main_bp.route('/explorar/<category_name>')

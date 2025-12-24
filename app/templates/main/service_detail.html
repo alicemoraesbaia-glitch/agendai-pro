@@ -12,9 +12,19 @@
 
     <section class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         <div class="relative h-[400px] md:h-[500px] w-full rounded-[3rem] overflow-hidden shadow-2xl shadow-indigo-100 border-4 border-white">
-            <img src="https://picsum.photos/seed/service_detail_{{ service.id }}/800/1000" 
-                 alt="{{ service.name }}"
-                 class="w-full h-full object-cover">
+            
+            {# Lógica Sênior para carregar a imagem real do serviço #}
+            {% if service.image_url %}
+                <img src="{{ url_for('static', filename='assets/img/services/' + service.image_url) }}" 
+                     alt="{{ service.name }}"
+                     class="w-full h-full object-cover"
+                     onerror="this.onerror=null; this.src='/static/assets/img/services/cardio.png';">
+            {% else %}
+                <img src="/static/assets/img/services/cardio.png" 
+                     alt="Serviço"
+                     class="w-full h-full object-cover">
+            {% endif %}
+
             <div class="absolute top-8 left-8 bg-white/90 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/50">
                 <span class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{{ service.category }}</span>
             </div>
@@ -29,7 +39,7 @@
                     {{ service.description or "Uma experiência exclusiva desenhada para o seu bem-estar e resultados excepcionais." }}
                 </p>
             </div>
-
+            
             <div class="grid grid-cols-2 gap-4">
                 <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-100">
                     <span class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Duração</span>
@@ -48,7 +58,6 @@
             </a>
         </div>
     </section>
-
     <section class="grid grid-cols-1 md:grid-cols-3 gap-12 pt-12 border-t border-slate-100">
         <div class="md:col-span-2 space-y-8">
             <div>
