@@ -194,3 +194,28 @@ def public_professionals():
     professionals = Resource.query.all()
     # Usamos o template de cards premium que discutimos
     return render_template('main/professionals.html', professionals=professionals)
+
+
+# Use o nome do seu blueprint: main_bp
+@main_bp.route('/service/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_service(id):
+    # 1. Verificação de segurança (Sênior)
+    if not current_user.is_admin:
+        abort(403)
+        
+    service = Service.query.get_or_404(id)
+    
+    try:
+        # 2. Exclusão física do registro
+        db.session.delete(service)
+        db.session.commit()
+        flash(f'Serviço {service.name} removido com sucesso!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        # Se houver erro de chave estrangeira (agendamentos vinculados), avisamos o usuário
+        flash('Erro ao deletar o serviço. Verifique se existem agendamentos vinculados.', 'danger')
+    
+    # 3. CORREÇÃO DO REDIRECT (Adaptado à sua função existente na linha 178)
+    # Como a função se chama 'list_services', o endpoint é 'main.list_services'
+    return redirect(url_for('main.list_services'))

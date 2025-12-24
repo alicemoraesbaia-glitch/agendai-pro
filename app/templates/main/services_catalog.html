@@ -31,17 +31,45 @@
 
     <section class="pb-16">
         <div id="service-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
             {% for service in services %}
-            <div class="service-card group bg-white rounded-[2rem] p-3 border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-indigo-100/30 transition-all duration-500"
+            <div class="service-card group bg-white rounded-[2rem] p-3 border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-indigo-100/30 transition-all duration-500 relative"
                  data-category="{{ service.category }}">
                 
-                <a href="{{ url_for('main.service_detail', service_id=service.id) }}" class="block relative h-48 w-full rounded-[1.6rem] overflow-hidden mb-4 bg-slate-100">
-                    <img src="https://picsum.photos/seed/service_{{ service.id }}/600/400" 
-                         alt="{{ service.name }}"
-                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                {# BOTÃO DE DELETAR - Ajustado para o seu Blueprint #}
+                {% if current_user.is_authenticated and current_user.is_admin %}
+                <div class="absolute top-6 right-6 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <form action="{{ url_for('main.delete_service', id=service.id) }}" method="POST" 
+                          onsubmit="return confirm('Sênior, confirma a exclusão definitiva de: {{ service.name }}?')">
+                        
+                        {# PROTEÇÃO CSRF #}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                        <button type="submit" class="p-2.5 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg border border-red-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+                {# LINK DE DETALHES - Ajustado para main.service_detail #}
+                <a href="{{ url_for('main.service_detail', service_id=service.id) }}" 
+                   class="block relative h-48 w-full rounded-[1.6rem] overflow-hidden mb-4 bg-slate-100 group">
+                    
+                    {% if service.image_url %}
+                        <img src="{{ url_for('static', filename='assets/img/services/' + service.image_url) }}" 
+                             alt="{{ service.name }}"
+                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                             onerror="this.onerror=null; this.src='/static/assets/img/services/cardio.png';">
+                    {% else %}
+                        <img src="/static/assets/img/services/cardio.png" 
+                             alt="Serviço Padrão"
+                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    {% endif %}
                     
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent opacity-60"></div>
-                    
                     <div class="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-sm border border-white/50">
                         <span class="text-[8px] font-black text-indigo-600 uppercase tracking-widest">
                             {{ service.category }}
@@ -56,7 +84,9 @@
                     
                     <div class="flex items-center gap-2 mb-4">
                         <div class="flex items-center text-[9px] font-black text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">
-                            <svg class="w-3 h-3 mr-1 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <svg class="w-3 h-3 mr-1 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
                             {{ service.duration_minutes }} MIN
                         </div>
                     </div>
@@ -64,18 +94,24 @@
                     <div class="flex items-center justify-between pt-4 border-t border-slate-50">
                         <div class="flex flex-col">
                             <span class="text-[8px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Valor</span>
-                            <span class="text-lg font-black text-slate-900 leading-none">R$ {{ "%.2f"|format(service.price_cents / 100) }}</span>
+                            <span class="text-lg font-black text-slate-900 leading-none">
+                                R$ {{ "%.2f"|format(service.price_cents / 100) }}
+                            </span>
                         </div>
                         
+                        {# BOTÃO DETALHES - Ajustado para main.service_detail #}
                         <a href="{{ url_for('main.service_detail', service_id=service.id) }}" 
                            class="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[8px] hover:bg-indigo-600 transition-all shadow-lg active:scale-95">
                             Detalhes
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                            </svg>
                         </a>
                     </div>
                 </div>
             </div>
             {% endfor %}
+
         </div>
     </section>
 </div>

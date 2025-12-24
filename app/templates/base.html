@@ -254,5 +254,17 @@
         </div>
     </footer>
     {% endif %}
+    <script>
+        // Script de debug para Sivaldo conferir o caminho das imagens
+        document.addEventListener('DOMContentLoaded', () => {
+            const images = document.querySelectorAll('img');
+            images.forEach(img => {
+                img.addEventListener('error', () => {
+                    console.error('Falha ao carregar imagem:', img.src);
+                });
+                console.log('Tentando carregar:', img.src);
+            });
+        });
+    </script>
 </body>
 </html>

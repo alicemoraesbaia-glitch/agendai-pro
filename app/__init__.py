@@ -10,7 +10,8 @@ from app.admin import routes
 
 
 def create_app(config_class=Config):
-    app = Flask(__name__)
+    # Definimos explicitamente que a pasta static está dentro de 'app/static'
+    app = Flask(__name__, static_folder='static') 
     app.config.from_object(config_class)
 
     # Inicialização das Extensões

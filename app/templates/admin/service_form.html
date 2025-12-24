@@ -23,40 +23,32 @@
                 <div class="space-y-2">
                     <label class="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Título do Serviço</label>
                     <input type="text" name="name" value="{{ service.name if service }}" required
-                           placeholder="Ex: Consultoria Premium, Corte de Cabelo..."
+                           placeholder="Ex: Consultoria Premium..."
                            class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 transition-all">
                 </div>
                 
                 <div class="space-y-2">
                     <label class="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Descrição Detalhada</label>
                     <textarea name="description" rows="3" 
-                              placeholder="Descreva o que está incluso e os benefícios deste serviço..."
                               class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 transition-all resize-none">{{ service.description if service }}</textarea>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="space-y-2">
                         <label class="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Duração (minutos)</label>
-                        <div class="relative">
-                            <input type="number" name="duration" value="{{ service.duration_minutes if service }}" required
-                                   class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 transition-all">
-                            <span class="absolute right-5 top-4 text-slate-400 font-bold text-sm">min</span>
-                        </div>
+                        <input type="number" name="duration" value="{{ service.duration_minutes if service }}" required
+                               class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 transition-all">
                     </div>
                     <div class="space-y-2">
                         <label class="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Preço Sugerido</label>
-                        <div class="relative">
-                            <span class="absolute left-5 top-4 text-indigo-500 font-black text-sm">R$</span>
-                            <input type="number" step="0.01" name="price" value="{{ (service.price_cents / 100) if service }}" required
-                                   class="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 transition-all">
-                        </div>
+                        <input type="number" step="0.01" name="price" value="{{ (service.price_cents / 100) if service }}" required
+                               class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 transition-all">
                     </div>
                 </div>
 
                 <div class="space-y-2">
-                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Responsável ou Local (Opcional)</label>
-                    <select name="resource_id" 
-                            class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 transition-all appearance-none cursor-pointer">
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Responsável ou Local</label>
+                    <select name="resource_id" class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-slate-900 font-bold focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
                         <option value="">Nenhum (Agenda Global)</option>
                         {% for res in resources %}
                             <option value="{{ res.id }}" {% if service and service.resource_id == res.id %}selected{% endif %}>
@@ -64,27 +56,51 @@
                             </option>
                         {% endfor %}
                     </select>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase ml-1">Vincule a um médico para ter agendas independentes</p>
+                </div>
+
+                <div class="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 space-y-4">
+                    <div class="flex items-center gap-4">
+                        <div id="preview-container" class="w-20 h-20 bg-white rounded-2xl border-2 border-dashed border-slate-200 overflow-hidden flex items-center justify-center shadow-inner">
+                            {% if service and service.image_url %}
+                                <img id="image-preview" 
+                                     src="{{ url_for('static', filename='assets/img/service/' + service.image_url) }}" 
+                                     class="w-full h-full object-cover"
+                                     onerror="showPlaceholder()">
+                            {% else %}
+                                <div id="preview-placeholder" class="text-slate-300">
+                                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            <label class="block text-xs font-black text-indigo-600 uppercase tracking-widest ml-1 mb-1 italic">
+                                🖼️ Nome do Arquivo (.png)
+                            </label>
+                            <input type="text" name="image_url" id="image_input" 
+                                   value="{{ service.image_url if service else '' }}" 
+                                   placeholder="Ex: cardio.png"
+                                   class="w-full px-5 py-3 bg-white border border-slate-200 rounded-xl text-slate-900 font-bold text-sm focus:ring-2 focus:ring-indigo-500 transition-all">
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase text-center">
+                        Salvar em: <span class="text-indigo-500 italic">static/assets/img/service/</span>
+                    </p>
                 </div>
 
                 <div class="flex items-center justify-between p-6 bg-emerald-50/50 rounded-3xl border border-emerald-100/50">
                     <div>
                         <p class="text-sm font-black text-slate-900 uppercase tracking-tight">Serviço Ativo</p>
-                        <p class="text-[10px] text-emerald-600 font-bold uppercase">Visível para agendamento imediato</p>
+                        <p class="text-[10px] text-emerald-600 font-bold uppercase">Visível para agendamento</p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="active" id="active" class="sr-only peer" 
-                               {% if not service or service.active %}checked{% endif %}>
-                        <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                        <input type="checkbox" name="active" class="sr-only peer" {% if not service or service.active %}checked{% endif %}>
+                        <div class="w-14 h-7 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                     </label>
                 </div>
 
                 <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-50">
-                    <a href="{{ url_for('admin.list_services') }}" 
-                       class="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-all text-[10px] uppercase tracking-widest text-center">
-                        Descartar
-                    </a>
-                    <button type="submit" class="w-full sm:w-auto bg-slate-900 text-white px-10 py-5 rounded-2xl font-black hover:bg-indigo-600 shadow-2xl shadow-slate-200 transition-all transform hover:-translate-y-1 active:scale-95 uppercase tracking-widest text-[11px]">
+                    <a href="{{ url_for('admin.list_services') }}" class="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-slate-400 hover:bg-slate-50 transition-all text-[10px] uppercase tracking-widest text-center">Descartar</a>
+                    <button type="submit" class="w-full sm:w-auto bg-slate-900 text-white px-10 py-5 rounded-2xl font-black hover:bg-indigo-600 shadow-2xl transition-all uppercase tracking-widest text-[11px]">
                         {{ 'Salvar Alterações' if service else 'Criar Serviço Agora' }}
                     </button>
                 </div>
@@ -92,4 +108,26 @@
         </form>
     </div>
 </div>
+
+<script>
+    function showPlaceholder() {
+        const container = document.getElementById('preview-container');
+        container.innerHTML = `<div id="preview-placeholder" class="text-slate-300">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        </div>`;
+    }
+
+    document.getElementById('image_input').addEventListener('input', function(e) {
+        const fileName = e.target.value.trim();
+        const container = document.getElementById('preview-container');
+        
+        if (fileName) {
+            // CAMINHO CORRIGIDO: static/assets/img/service/
+            const url = `/static/assets/img/service/${fileName}`;
+            container.innerHTML = `<img id="image-preview" src="${url}" class="w-full h-full object-cover" onerror="showPlaceholder()">`;
+        } else {
+            showPlaceholder();
+        }
+    });
+</script>
 {% endblock %}

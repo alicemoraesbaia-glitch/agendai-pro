@@ -5,14 +5,18 @@
     <div class="bg-slate-900 rounded-3xl p-5 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl border border-indigo-500/30">
         <div class="flex items-center gap-3">
             <div class="w-2 h-2 rounded-full bg-indigo-500 animate-ping"></div>
-            <span class="text-white font-black text-[11px] uppercase tracking-[0.2em]">Painel de Controle Administrador</span>
+            <span class="text-white font-black text-[11px] uppercase tracking-[0.2em]">
+                Painel de Controle Administrador
+            </span>
         </div>
+
         <div class="flex items-center gap-3 w-full md:w-auto">
-            <a href="{{ url_for('admin.new_resource') }}" 
+            <a href="{{ url_for('admin.new_resource') }}"
                class="flex-1 md:flex-none text-center bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-2xl font-bold text-[10px] uppercase tracking-widest transition-all">
                 + Médico / Sala
             </a>
-            <a href="{{ url_for('admin.manage_service') }}" 
+
+            <a href="{{ url_for('admin.manage_service') }}"
                class="flex-1 md:flex-none text-center bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20">
                 + Criar Novo Serviço
             </a>
@@ -21,26 +25,22 @@
 </div>
 
 <div class="max-w-7xl mx-auto space-y-10 py-10 px-4 sm:px-6 lg:px-8">
-    
+
     <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
         <div class="flex-1">
-            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-2 block">Gestão de Portfólio</span>
+            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] block mb-2">
+                Gestão de Portfólio
+            </span>
             <h1 class="text-4xl font-black text-slate-900 tracking-tight italic">
                 Catálogo de <span class="text-indigo-600">Serviços</span>
             </h1>
-            <p class="text-slate-500 mt-2 font-medium">Configure os preços, tempos e visibilidade dos seus atendimentos.</p>
+            <p class="text-slate-500 mt-2 font-medium">
+                Configure os preços, tempos e visibilidade dos seus atendimentos.
+            </p>
         </div>
-        
-        <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-            <a href="{{ url_for('admin.new_resource') }}" 
-               class="flex-1 sm:flex-none inline-flex items-center justify-center bg-white text-indigo-600 border-2 border-indigo-100 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-50 hover:border-indigo-200 transition-all shadow-sm">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                </svg>
-                + Médico / Sala
-            </a>
 
-            <a href="{{ url_for('admin.manage_service') }}" 
+        <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            <a href="{{ url_for('admin.manage_service') }}"
                class="flex-1 sm:flex-none inline-flex items-center justify-center bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 shadow-xl shadow-slate-200 transition-all transform hover:-translate-y-1 active:scale-95 group">
                 <svg class="w-4 h-4 mr-2 text-indigo-400 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/>
@@ -62,20 +62,32 @@
                         <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Ações</th>
                     </tr>
                 </thead>
+
                 <tbody class="divide-y divide-slate-50">
                     {% for s in services %}
                     <tr class="hover:bg-slate-50/80 transition-all group cursor-default">
+                        
                         <td class="px-8 py-6">
                             <div class="flex items-center">
-                                <div class="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-2xl flex items-center justify-center mr-4 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
-                                    </svg>
+                                <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mr-4 overflow-hidden shadow-sm border border-slate-100">
+                                    {% if s.image_url %}
+                                        {# Usamos url_for para o caminho principal #}
+                                        <img src="{{ url_for('static', filename='assets/img/services/' + s.image_url) }}" 
+                                             alt="{{ s.name }}" 
+                                             class="w-full h-full object-cover"
+                                             onerror="this.onerror=null; this.src='/static/assets/img/services/cardio.png';">
+                                    {% else %}
+                                        {# Fallback caso não exista URL no banco #}
+                                        <img src="/static/assets/img/services/cardio.png" 
+                                             class="w-full h-full object-cover" 
+                                             alt="Padrão">
+                                    {% endif %}
                                 </div>
+
                                 <div>
                                     <p class="text-base font-bold text-slate-900 leading-tight">{{ s.name }}</p>
                                     <p class="text-[10px] text-slate-400 font-medium uppercase tracking-tighter mt-1">
-                                        {{ s.description[:40] }}{% if s.description|length > 40 %}...{% endif %}
+                                        {{ s.description[:45] }}{% if s.description|length > 45 %}...{% endif %}
                                     </p>
                                 </div>
                             </div>
@@ -91,11 +103,10 @@
                         </td>
 
                         <td class="px-8 py-6">
-                            <div class="flex flex-col">
-                                <span class="text-slate-900 font-black text-lg">
-                                    <span class="text-indigo-500 text-xs font-bold mr-0.5">R$</span>{{ "%.2f"|format(s.price_cents / 100) }}
-                                </span>
-                            </div>
+                            <span class="text-slate-900 font-black text-lg">
+                                <span class="text-indigo-500 text-xs font-bold">R$</span>
+                                {{ "%.2f"|format(s.price_cents / 100) }}
+                            </span>
                         </td>
 
                         <td class="px-8 py-6">
@@ -108,7 +119,7 @@
 
                         <td class="px-8 py-6">
                             <div class="flex justify-center">
-                                <a href="{{ url_for('admin.manage_service', id=s.id) }}" 
+                                <a href="{{ url_for('admin.manage_service', id=s.id) }}"
                                    class="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-white border border-slate-200 text-slate-400 hover:border-indigo-500 hover:text-indigo-500 hover:bg-indigo-50 transition-all shadow-sm hover:shadow-md">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
@@ -116,11 +127,12 @@
                                 </a>
                             </div>
                         </td>
+
                     </tr>
                     {% else %}
                     <tr>
                         <td colspan="5" class="px-8 py-20 text-center text-slate-400 italic">
-                            Nenhum serviço cadastrado ainda. Comece adicionando o seu primeiro!
+                            Nenhum serviço cadastrado ainda.
                         </td>
                     </tr>
                     {% endfor %}

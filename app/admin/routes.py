@@ -250,38 +250,38 @@ def list_services():
 @login_required
 @admin_required
 def manage_service(id=None):
-    # Se houver ID, é edição. Se não, service é None (novo cadastro).
     service = Service.query.get_or_404(id) if id else None
-    
-    # Carrega os recursos (médicos/salas) para o select do formulário
     resources = Resource.query.all() 
     
     if request.method == 'POST':
         try:
-            # Tratamento de preço: aceita vírgula ou ponto
             price_raw = request.form.get('price', '0').replace(',', '.')
             price_cents = int(round(float(price_raw) * 100))
             
-            # Se não existe serviço (id é None), cria uma nova instância
             if not service:
                 service = Service()
                 db.session.add(service)
             
-            # Atribuição de valores do formulário
             service.name = request.form.get('name')
             service.description = request.form.get('description')
             service.duration_minutes = int(request.form.get('duration', 30))
             service.price_cents = price_cents
             service.active = True if request.form.get('active') else False
             
-            # Vínculo com Médico/Sala (Resource)
+            # --- AJUSTE SÊNIOR AQUI ---
+            image_input = request.form.get('image_url')
+            # Se o usuário não digitar nada, usamos 'default.png' que é o padrão da sua pasta assets
+            service.image_url = image_input if image_input else 'default.png'
+            
             res_id = request.form.get('resource_id')
             service.resource_id = int(res_id) if res_id and res_id != "" else None
             
             db.session.commit()
             flash(f'Serviço "{service.name}" salvo com sucesso!', 'success')
-            # Redireciona para a vitrine para você ver o resultado imediato
-            return redirect(url_for('main.services')) 
+            
+            # ERRO ANTERIOR: Você estava usando 'main.services' (que não existe)
+            # CORREÇÃO: Redireciona para a lista de serviços do ADMIN
+            return redirect(url_for('admin.list_services')) 
             
         except Exception as e:
             db.session.rollback()

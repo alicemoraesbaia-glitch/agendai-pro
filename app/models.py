@@ -85,6 +85,8 @@ class Resource(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False, unique=True)
     category = db.Column(db.String(50))  # Ex: 'Cardiologista', 'Sala 01', 'Dentista'
+    # Foto do Especialista
+    profile_image = db.Column(db.String(255), nullable=True, default='default-doctor.webp')
     
     services = db.relationship('Service', back_populates='resource', lazy=True)
 
@@ -94,6 +96,9 @@ class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
+    # Guardamos apenas o nome do arquivo (ex: 'odonto.webp') 
+    # ou a URL completa. O valor default garante que nenhum card fique em branco.
+    image_url = db.Column(db.String(255), nullable=True, default='default-service.webp')
     duration_minutes = db.Column(db.Integer, nullable=False)
     price_cents = db.Column(db.Integer, nullable=False)
     category = db.Column(db.String(50), nullable=False, default='Geral')
