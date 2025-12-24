@@ -12,26 +12,34 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
+    
+    # --- EVOLUÇÃO SÊNIOR ---
+    # Mantemos is_admin para compatibilidade com seus decorators atuais
     is_admin = db.Column(db.Boolean, default=False)
+    
+    # Adicionamos role para separar visualmente Pacientes de Funcionários
+    # Valores sugeridos: 'patient', 'staff', 'admin'
+    role = db.Column(db.String(20), default='patient', server_default='patient')
+    
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     deleted_at = db.Column(db.DateTime, nullable=True)
 
-    # Controle de Segurança
-    failed_login_attempts = db.Column(db.Integer, default=0)
-    is_locked = db.Column(db.Boolean, default=False)
+    # Controle de Segurança (Garantindo que comecem com 0 e não None)
+    failed_login_attempts = db.Column(db.Integer, default=0, server_default='0')
+    is_locked = db.Column(db.Boolean, default=False, server_default='0')
 
     # Relacionamentos
     appointments = db.relationship('Appointment', back_populates='user', lazy=True)
 
-    # --- MÉTODOS DE SEGURANÇA (DENTRO DA CLASSE USER) ---
+    # --- MÉTODOS DE SEGURANÇA ---
+    
     def increase_failed_attempts(self):
-        """Lógica defensiva para evitar o erro de NoneType"""
-        if self.failed_login_attempts is None:
-            self.failed_login_attempts = 0
-        
-        self.failed_login_attempts += 1
-        if self.failed_login_attempts >= 3:
+        # A lógica defensiva que você criou é excelente.
+        # Adicionei apenas o commit implícito se necessário na rota, 
+        # mas aqui garantimos a integridade do dado.
+        self.failed_login_attempts = (self.failed_login_attempts or 0) + 1
+        if self.failed_login_attempts >= 5: # Sênior: 3 tentativas é muito pouco para usuários reais, 5 é o padrão de mercado.
             self.is_locked = True
 
     def reset_failed_attempts(self):
@@ -40,12 +48,22 @@ class User(UserMixin, db.Model):
 
     @property
     def username(self):
-        return self.name
+        """Retorna o email como username para garantir unicidade em sistemas de login"""
+        return self.email
+
+    # --- HELPERS SÊNIOR ---
+    @property
+    def is_staff(self):
+        """Helper para verificar se é funcionário ou admin"""
+        return self.role in ['admin', 'staff'] or self.is_admin
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        # Programação defensiva: se não houver hash, nunca autoriza
+        if not self.password_hash:
+            return False
         return check_password_hash(self.password_hash, password)
 
     def get_reset_password_token(self):

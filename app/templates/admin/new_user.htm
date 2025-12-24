@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto animate-fade-in">
+    <div class="mb-12 px-2">
+        <a href="{{ url_for('admin.list_users') }}" class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-4 flex items-center gap-2 hover:text-indigo-600 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" />
+            </svg>
+            Voltar para Gestão
+        </a>
+        <h1 class="text-4xl font-black text-slate-900 tracking-tight italic">
+            Novo <span class="text-indigo-600">Usuário</span>
+        </h1>
+    </div>
+
+    <div class="bg-white rounded-[2.5rem] p-10 shadow-2xl shadow-slate-200 border border-slate-100 relative overflow-hidden">
+        <form method="POST" class="space-y-8 relative z-10">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nome Completo</label>
+                    <input type="text" name="name" required placeholder="Ex: João Silva"
+                           class="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">E-mail de Acesso</label>
+                    <input type="email" name="email" required placeholder="email@exemplo.com"
+                           class="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nível de Acesso</label>
+                    <select name="role" class="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 transition-all appearance-none">
+                        <option value="patient">Paciente</option>
+                        <option value="staff">Equipe / Staff</option>
+                        <option value="admin">Administrador Master</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Senha Provisória</label>
+                    <input type="password" name="password" placeholder="Mínimo 6 caracteres"
+                           class="w-full bg-slate-50 border-none rounded-2xl px-6 py-4 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 transition-all placeholder:text-slate-300">
+                </div>
+            </div>
+
+            <div class="pt-6">
+                <button type="submit" 
+                        class="w-full bg-slate-900 hover:bg-indigo-600 text-white py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all shadow-xl active:scale-[0.98]">
+                    Finalizar Cadastro
+                </button>
+            </div>
+        </form>
+
+        <div class="absolute -bottom-12 -right-12 w-48 h-48 bg-indigo-50 rounded-full blur-3xl opacity-50"></div>
+    </div>
+</div>
+{% endblock %}

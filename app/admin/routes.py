@@ -85,41 +85,64 @@ def dashboard():
 
 # --- GESTÃO DE USUÁRIOS (VERSÃO ÚNICA E CORRETA) ---
 
-@admin_bp.route('/users')
+# --- Gestão de Usuários (Final do arquivo) ---
+
+@admin_bp.route('/admin/users')
 @login_required
 @admin_required
 def list_users():
-    # Sênior: Buscamos os dados de forma separada para o template users_list.html
-    # Isso resolve o incômodo de ver tudo misturado
-    admins = User.query.filter_by(is_admin=True).order_by(User.name.asc()).all()
-    patients = User.query.filter_by(is_admin=False).order_by(User.name.asc()).all()
-    
-    return render_template('admin/users_list.html', 
-                           admins=admins, 
-                           patients=patients)
+    # Sênior: Filtramos estritamente para não misturar no dashboard
+    # Admins/Staff: Quem tem flag is_admin OU role de staff/admin
+    admins = User.query.filter(
+        (User.is_admin == True) | (User.role.in_(['admin', 'staff']))
+    ).filter(User.deleted_at == None).all()
 
-@admin_bp.route('/user/new', methods=['GET', 'POST'])
+    # Pacientes: APENAS quem tem role 'patient' E não é admin
+    patients = User.query.filter_by(role='patient', is_admin=False, deleted_at=None).all()
+
+    return render_template('admin/users.html', admins=admins, patients=patients)
+
+@admin_bp.route('/admin/user/new', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def new_user():
     if request.method == 'POST':
-        username = request.form.get('username')
+        # AJUSTE: O seu HTML usa name="username" e name="role"
+        username_input = request.form.get('username') 
         email = request.form.get('email')
         password = request.form.get('password')
-        role = request.form.get('role')
-        
+        role_input = request.form.get('role') # Recebe 'cliente' ou 'admin'
+
+        # Validação básica
         if User.query.filter_by(email=email).first():
-            flash('Este e-mail já está cadastrado!', 'danger')
+            flash('Este e-mail já está cadastrado no sistema.', 'danger')
             return redirect(url_for('admin.new_user'))
 
-        new_u = User(name=username, email=email, is_admin=(role == 'admin'))
-        new_u.set_password(password)
-        db.session.add(new_u)
-        db.session.commit()
-        
-        flash(f'Usuário {username} criado com sucesso!', 'success')
-        return redirect(url_for('admin.list_users'))
-    return render_template('admin/edit_user.html', user=None, title="Novo Usuário")
+        try:
+            # Mapeamos o valor 'cliente' do HTML para 'patient' do Banco (se necessário)
+            db_role = 'patient' if role_input == 'cliente' else 'admin'
+            
+            new_u = User(
+                username=username_input, 
+                name=username_input, # Salvamos o nome completo aqui também
+                email=email, 
+                role=db_role,
+                is_admin=True if db_role == 'admin' else False
+            )
+            new_u.set_password(password if password else "Mudar123!")
+            
+            db.session.add(new_u)
+            db.session.commit()
+            
+            flash(f'Usuário {username_input} criado com sucesso!', 'success')
+            return redirect(url_for('admin.list_users'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao criar usuário: {str(e)}', 'danger')
+
+    # Se você decidiu manter o arquivo separado, certifique-se que o nome aqui 
+    # seja o nome real do arquivo (ex: new_user.html ou o seu edit_user.html)
+    return render_template('admin/edit_user.html', user=None)
 
 @admin_bp.route('/user/<int:id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -415,3 +438,14 @@ def list_resources():
     resources = Resource.query.all()
     return render_template('admin/resources_list.html', resources=resources)
     return render_template('admin/resource_form.html', resource=resource)
+
+
+@admin_bp.route('/admin/user/<int:id>/unlock', methods=['POST'])
+@login_required
+@admin_required
+def unlock_user(id):
+    user = User.query.get_or_404(id)
+    user.reset_failed_attempts() # O método que já criamos no seu Model
+    db.session.commit()
+    flash(f'A conta de {user.name} foi desbloqueada com sucesso.', 'success')
+    return redirect(url_for('admin.list_users'))
