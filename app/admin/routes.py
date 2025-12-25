@@ -1,4 +1,4 @@
-from flask import render_template, request, flash, redirect, url_for, abort
+from flask import render_template, request, flash, redirect, url_for, abort, jsonify
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.admin import admin_bp
@@ -10,7 +10,6 @@ from functools import wraps
 from flask import Blueprint, render_template
 
 
-from flask import Blueprint, render_template
 # ... outras importações ...
 
 # Esta linha deve existir antes de usar @admin.route
@@ -193,42 +192,57 @@ def list_all_appointments():
     ).order_by(Appointment.start_datetime.desc()).all()
     return render_template('admin/all_appointments.html', appointments=all_appts)
 
-
 @admin_bp.route('/appointment/<int:id>/status/<string:new_status>', methods=['POST'])
 @login_required
 @admin_required
 def update_status(id, new_status):
+    from datetime import datetime
+    import logging
+    
     appt = Appointment.query.get_or_404(id)
     
-    # --- LÓGICA SÊNIOR: Captura o horário real de início ---
+    # --- VALIDAÇÃO SÊNIOR: Bloqueio de Especialista Duplicado ---
     if new_status == 'in_progress':
-        # Se estamos chamando agora, gravamos o horário atual
-        from datetime import datetime
+        resource_id = appt.service.resource_id if appt.service else None
+        
+        if resource_id:
+            # Verifica se o especialista já está ocupado
+            conflito = Appointment.query.join(Appointment.service).filter(
+                Appointment.status == 'in_progress',
+                Service.resource_id == resource_id,
+                Appointment.id != id
+            ).first()
+            
+            if conflito:
+                nome_especialista = appt.service.resource.name
+                nome_paciente_atual = conflito.user.name or conflito.user.username
+                
+                logging.warning(f"Conflito: {nome_especialista} tentou atender dois ao mesmo tempo.")
+                flash(f'Bloqueado: {nome_especialista} já está atendendo {nome_paciente_atual}!', 'danger')
+                return redirect(request.referrer or url_for('admin.dashboard'))
+
+        # Se livre, grava início real
         appt.actual_start = datetime.now()
     
-    # Dicionário completo de mensagens
+    # Dicionário de mensagens
     messages = {
         'confirmed': f'Consulta de {appt.user.name} confirmada!',
-        'arrived': f'{appt.user.name} acabou de chegar na recepção.',
-        'in_progress': f'Atendimento de {appt.user.name} iniciado (Aparecerá na TV!).',
-        'completed': f'Atendimento de {appt.user.name} finalizado com sucesso!',
-        'cancelled': f'A consulta de {appt.user.name} foi cancelada.'
+        'arrived': f'{appt.user.name} chegou.',
+        'in_progress': f'Chamando {appt.user.name} no painel!',
+        'completed': f'Atendimento de {appt.user.name} finalizado.',
+        'cancelled': f'Consulta de {appt.user.name} cancelada.'
     }
 
-    if new_status in messages:
+    try:
         appt.status = new_status
         db.session.commit()
-        flash(messages.get(new_status), 'success')
-    else:
-        appt.status = new_status
-        db.session.commit()
-        flash('Status atualizado.', 'info')
+        flash(messages.get(new_status, 'Status atualizado.'), 'success' if new_status in messages else 'info')
+    except Exception as e:
+        db.session.rollback()
+        logging.error(f"Erro no status: {str(e)}")
+        flash('Erro ao salvar no banco de dados.', 'danger')
         
     return redirect(request.referrer or url_for('admin.dashboard'))
-
-import logging # Sênior usa logs de arquivo também
-
-import json # Certifique-se de que o import está no topo do arquivo
 
 @admin_bp.route('/appointment/<int:id>/delete', methods=['POST'])
 @login_required
@@ -236,34 +250,32 @@ import json # Certifique-se de que o import está no topo do arquivo
 def delete_appointment(id):
     appt = Appointment.query.get_or_404(id)
     
-    # 1. Primeiro criamos o dicionário (o snapshot)
-    data_snapshot = {
-        "servico": appt.service.name,
-        "data_hora": appt.start_datetime.strftime('%d/%m/%Y %H:%M'),
-        "cliente_id": appt.user_id,
-        "valor": f"R$ {appt.service.price_cents / 100:.2f}",
-        "status_final": appt.status
-    }
+    # Preparamos os detalhes para o log antes de deletar o objeto
+    detalhes_exclusao = (
+        f"Serviço: {appt.service.name} | "
+        f"Data Horário: {appt.start_datetime.strftime('%d/%m/%Y %H:%M')} | "
+        f"Cliente ID: {appt.user_id} | "
+        f"Valor: R$ {appt.service.price_cents / 100}"
+    )
 
     try:
-        # 2. AQUI ENTRA O AJUSTE SÊNIOR:
-        # O indent=4 cria as quebras de linha e espaços, deixando o JSON "bonito"
-        json_formatado = json.dumps(data_snapshot, indent=4, ensure_ascii=False)
-
+        # 1. Criamos o registro de auditoria
         log = AuditLog(
             action='DELETAR_AGENDAMENTO',
-            details=json_formatado, # Salvamos a string já formatada
+            details=detalhes_exclusao,
             admin_email=current_user.email
         )
-        
         db.session.add(log)
-        db.session.delete(appt)
-        db.session.commit()
         
-        flash('Agendamento removido com sucesso!', 'success')
+        # 2. Deletamos o agendamento
+        db.session.delete(appt)
+        
+        # Comitamos ambos (o log nasce e o agendamento morre na mesma transação)
+        db.session.commit()
+        flash('Agendamento removido. Ação registrada no log de auditoria.', 'success')
     except Exception as e:
         db.session.rollback()
-        flash('Erro ao deletar agendamento.', 'danger')
+        flash(f'Erro na operação: {str(e)}', 'danger')
         
     return redirect(request.referrer or url_for('admin.list_all_appointments'))
 
@@ -275,6 +287,7 @@ def delete_appointment(id):
 def list_services():
     services = Service.query.all()
     return render_template('admin/services.html', services=services)
+
 
 @admin_bp.route('/service/new', methods=['GET', 'POST'])
 @admin_bp.route('/service/edit/<int:id>', methods=['GET', 'POST'])
@@ -343,59 +356,39 @@ def user_history(id):
 @admin_required
 def tv_panel():
     from datetime import datetime
+    from sqlalchemy.orm import joinedload # Garanta que isso esteja importado
+    
     now = datetime.now()
     today = now.date()
 
-    # 1. ATENDIMENTOS ATIVOS (O que aparece em destaque no telão)
-    # Buscamos quem está com status 'in_progress'
+    # 1. ATENDIMENTOS ATIVOS
+    # AJUSTE SÊNIOR: Adicionado o carregamento encadeado do Resource (Especialista)
     atendimentos_atuais = Appointment.query.filter(
         func.date(Appointment.start_datetime) == today,
         Appointment.status == 'in_progress'
     ).options(
         joinedload(Appointment.user), 
-        joinedload(Appointment.service)
+        joinedload(Appointment.service).joinedload(Service.resource) # Carrega o especialista aqui
     ).all()
 
-    # 2. FILA DE ESPERA (Quem já chegou na recepção)
-    # Buscamos quem está com status 'arrived' ou 'confirmed' (ainda não chamados)
+    # 2. FILA DE ESPERA
+    # AJUSTE SÊNIOR: Adicionado carregamento do serviço e especialista para a fila também
     fila_espera = Appointment.query.filter(
         func.date(Appointment.start_datetime) == today,
         Appointment.status.in_(['arrived', 'confirmed'])
     ).options(
-        joinedload(Appointment.user)
+        joinedload(Appointment.user),
+        joinedload(Appointment.service).joinedload(Service.resource) # Carrega para evitar erros na fila
     ).order_by(Appointment.start_datetime.asc()).all()
     
     return render_template(
         'admin/tv_panel.html', 
         atendimentos=atendimentos_atuais, 
         espera=fila_espera, 
-        now=now
+        now=now,
+        exibindo_amanha=False # Mantendo compatibilidade com o template
     )
-    
-    
-# --- PAINEL TV (A versão correta com filtros inteligentes) ---
-@admin_bp.route('/painel-tv') # Use admin_bp para manter consistência
-@login_required
-@admin_required
-def painel_tv():
-    # Pegamos apenas o que é relevante para o público ver na TV
-    agora = datetime.now()
-    
-    # 1. Atendimentos que estão acontecendo AGORA (Status 'in_progress')
-    em_curso = Appointment.query.filter_by(status='in_progress').options(
-        joinedload(Appointment.user), 
-        joinedload(Appointment.service)
-    ).all()
-    
-    # 2. Próximos da fila (Confirmados ou Pendentes do futuro)
-    proximos = Appointment.query.filter(
-        Appointment.status.in_(['confirmed', 'pending']),
-        Appointment.start_datetime >= agora
-    ).order_by(Appointment.start_datetime.asc()).limit(5).all()
 
-    return render_template('admin/painel_tv.html', 
-                           em_curso=em_curso, 
-                           proximos=proximos)
 
 # --- DASHBOARD DE OCUPAÇÃO (A versão operacional clara) ---
 @admin_bp.route('/dashboard-ocupacao')
@@ -489,3 +482,65 @@ def view_delete_logs():
     logs = AuditLog.query.order_by(AuditLog.created_at.desc()).all()
     return render_template('admin/logs_deletados.html', logs=logs)
 
+@admin_bp.route('/api/atendimentos-tv')
+@login_required
+@admin_required
+def api_atendimentos_tv():
+    from datetime import datetime
+    now = datetime.now()
+    today = now.date()
+    
+    # CONFIGURAÇÃO SENIOR: Define o fim do expediente (Ex: 18:00)
+    # Você pode mudar isso para 19, 20, ou buscar de uma tabela de configurações
+    HORA_LIMITE_EXPEDIENTE = 23
+
+    # Se já passou da hora limite, podemos retornar uma lista vazia ou 
+    # focar apenas em quem ainda está "em andamento" (casos de atraso)
+    if now.hour >= HORA_LIMITE_EXPEDIENTE:
+        # Opcional: Logar que o expediente encerrou
+        pass
+
+    atendimentos = Appointment.query.filter(
+        func.date(Appointment.start_datetime) == today,
+        Appointment.status == 'in_progress'
+    ).options(
+        joinedload(Appointment.user),
+        joinedload(Appointment.service).joinedload(Service.resource)
+    ).all()
+
+    data = []
+    for appt in atendimentos:
+        data.append({
+            'paciente': appt.user.name or appt.user.username,
+            'sala': f"SALA {atendimentos.index(appt) + 1}",
+            'especialista': appt.service.resource.name if (appt.service and appt.service.resource) else 'Equipe'
+        })
+    
+    return jsonify(data)
+
+
+@admin_bp.route('/testar-chamada-agora')
+@login_required
+@admin_required
+def testar_chamada_agora():
+    from datetime import datetime
+    # Pega qualquer serviço e usuário existente para o teste
+    user = User.query.first()
+    service = Service.query.first()
+    
+    if not user or not service:
+        return "Erro: Você precisa ter pelo menos um usuário e um serviço cadastrados."
+
+    # Cria um agendamento direto com status 'in_progress'
+    # Isso pula qualquer validação de horário do formulário
+    novo_teste = Appointment(
+        user_id=user.id,
+        service_id=service.id,
+        start_datetime=datetime.now(),
+        status='in_progress'
+    )
+    
+    db.session.add(novo_teste)
+    db.session.commit()
+    
+    return f"Sucesso! O paciente {user.name} foi inserido como 'Em Atendimento'. Olhe para a TV agora!"

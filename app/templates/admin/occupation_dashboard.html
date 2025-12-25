@@ -5,10 +5,21 @@
 {% block content %}
 <div class="space-y-8 animate-in fade-in duration-700">
     
+    {# CABEÇALHO DINÂMICO #}
     <div class="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-200 pb-6">
         <div>
             <span class="text-indigo-600 font-black uppercase tracking-[0.3em] text-[10px]">Monitoramento</span>
-            <h1 class="text-4xl font-black text-slate-900 tracking-tighter">Ocupação <span class="text-slate-400 font-light">Hoje</span></h1>
+            <h1 class="text-4xl font-black text-slate-900 tracking-tighter">
+                Ocupação 
+                <span class="text-slate-400 font-light">
+                    {% if exibindo_amanha %}Amanhã{% else %}Hoje{% endif %}
+                </span>
+            </h1>
+            {% if exibindo_amanha %}
+            <p class="text-[10px] font-bold text-amber-500 uppercase mt-1 italic">
+                Modo Visualização: Agenda de {{ target_date.strftime('%d/%m') }}
+            </p>
+            {% endif %}
         </div>
         <div class="flex items-center gap-4">
             <div class="text-right">
@@ -24,6 +35,7 @@
         </div>
     </div>
 
+    {# CARDS DE RESUMO #}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
             <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p>
@@ -42,13 +54,14 @@
             </h3>
         </div>
         <div class="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100">
-            <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Em Curso</p>
+            <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Em Atendimento</p>
             <h3 class="text-3xl font-black text-indigo-700">
                 {{ appointments|selectattr('status', 'equalto', 'in_progress')|list|length }}
             </h3>
         </div>
     </div>
 
+    {# TABELA COM LÓGICA DE BLOQUEIO #}
     <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
         <table class="w-full text-left border-collapse">
             <thead>
@@ -66,7 +79,8 @@
                     <td class="px-8 py-6">
                         <div class="flex flex-col">
                             <span class="text-lg font-black text-slate-900">{{ appt.start_datetime.strftime('%H:%M') }}</span>
-                            {% if appt.status == 'pending' and appt.start_datetime < now %}
+                            {# Só mostra atraso se for HOJE #}
+                            {% if not exibindo_amanha and appt.status == 'pending' and appt.start_datetime < now %}
                             <span class="text-[9px] font-black text-red-500 uppercase animate-pulse">Atrasado</span>
                             {% endif %}
                         </div>
@@ -93,35 +107,34 @@
                     </td>
                     <td class="px-8 py-6 text-right">
                         <div class="flex justify-end gap-2">
-                            {% if appt.status == 'confirmed' %}
-                                <form action="{{ url_for('admin.update_status', id=appt.id, new_status='in_progress') }}" method="POST">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-indigo-700 transition-all shadow-md flex items-center gap-2">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /></svg>
-                                        Chamar
-                                    </button>
-                                </form>
-                            {% elif appt.status == 'in_progress' %}
-                                <form action="{{ url_for('admin.update_status', id=appt.id, new_status='completed') }}" method="POST">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase hover:bg-black transition-all shadow-md flex items-center gap-2">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
-                                        Concluir
-                                    </button>
-                                </form>
+                            {# TRAVA SÊNIOR: Ações só aparecem se NÃO for agenda de amanhã #}
+                            {% if not exibindo_amanha %}
+                                {% if appt.status in ['confirmed', 'arrived', 'pending'] %}
+                                    <form action="{{ url_for('admin.update_status', id=appt.id, new_status='in_progress') }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-indigo-700 transition-all shadow-md flex items-center gap-2">
+                                            Chamar
+                                        </button>
+                                    </form>
+                                {% elif appt.status == 'in_progress' %}
+                                    <form action="{{ url_for('admin.update_status', id=appt.id, new_status='completed') }}" method="POST">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                        <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase hover:bg-black transition-all shadow-md flex items-center gap-2">
+                                            Concluir
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                {# Visual para quando os botões estão bloqueados #}
+                                <span class="text-[9px] font-black text-slate-300 uppercase italic tracking-widest">Agendado</span>
                             {% endif %}
                         </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="px-8 py-12 text-center">
-                        <div class="flex flex-col items-center">
-                            <span class="text-slate-300 mb-2">
-                                <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            </span>
-                            <p class="text-slate-400 font-bold">Nenhum agendamento para hoje até o momento.</p>
-                        </div>
+                    <td colspan="5" class="px-8 py-12 text-center text-slate-400 font-bold uppercase text-xs">
+                        Nenhum agendamento para {% if exibindo_amanha %}amanhã{% else %}hoje{% endif %}.
                     </td>
                 </tr>
                 {% endfor %}
@@ -131,8 +144,6 @@
 </div>
 
 <script>
-    setTimeout(function(){
-       window.location.reload(1);
-    }, 60000);
+    setTimeout(function(){ window.location.reload(1); }, 60000);
 </script>
 {% endblock %}

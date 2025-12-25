@@ -25,6 +25,9 @@
             -webkit-backdrop-filter: blur(16px) saturate(180%);
         }
 
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
         .bg-blob {
             position: fixed;
             width: 60vw;
@@ -57,8 +60,14 @@
             <a href="{{ url_for('admin.list_users') }}" class="text-[10px] font-black uppercase tracking-widest hover:text-indigo-400 whitespace-nowrap">👥 Usuários</a>
             
             <div class="h-4 w-px bg-slate-700 mx-1"></div>
+
+            <a href="{{ url_for('admin.tv_panel') }}" class="text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 whitespace-nowrap">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                Painel TV
+            </a>
+
             <a href="{{ url_for('admin.view_delete_logs') }}" class="text-[10px] font-black uppercase tracking-widest text-red-400 hover:text-red-300 flex items-center gap-1.5 whitespace-nowrap">
-                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 Auditoria
             </a>
         </div>
@@ -146,14 +155,14 @@
              x-transition:enter="transition ease-out duration-300" 
              x-transition:enter-start="opacity-0 translate-y-4" 
              x-transition:enter-end="opacity-100 translate-y-0" 
-             class="md:hidden bg-white/95 backdrop-blur-2xl border-t border-slate-100 p-8 space-y-6 shadow-2xl">
+             class="md:hidden bg-white/95 backdrop-blur-2xl border-t border-slate-100 p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
             
             <a href="{{ url_for('main.index') }}" class="block text-2xl font-black text-slate-900">Início</a>
             <a href="{{ url_for('main.list_services') }}" class="block text-2xl font-black text-slate-900">Serviços</a>
             <a href="{{ url_for('main.public_professionals') }}" class="block text-2xl font-black text-slate-900">Nossa Equipe</a>
 
             {% if current_user.is_authenticated %}
-                <div class="flex items-center gap-4 mb-8 p-4 bg-slate-50 rounded-3xl border border-slate-100">
+                <div class="flex items-center gap-4 mb-4 p-4 bg-slate-50 rounded-3xl border border-slate-100">
                     <div class="w-12 h-12 {% if current_user.is_admin %}bg-indigo-600 text-white{% else %}bg-slate-100 text-slate-400{% endif %} rounded-2xl flex items-center justify-center font-black text-xl">
                         {{ (current_user.name[0] if current_user.name else 'U') | upper }}
                     </div>
@@ -166,12 +175,11 @@
                 </div>
 
                 {% if current_user.is_admin %}
-                    <div class="space-y-3 bg-indigo-50 p-6 rounded-3xl">
-                        <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Ações de Gestão</p>
-                        <a href="{{ url_for('admin.manage_service') }}" class="block bg-indigo-600 text-white p-4 rounded-2xl text-center font-black text-xs uppercase tracking-widest">+ Novo Serviço</a>
-                        <a href="{{ url_for('admin.view_delete_logs') }}" class="block bg-red-50 text-red-600 border border-red-100 p-4 rounded-2xl text-center font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
-                            🛡️ Ver Logs de Exclusão
-                        </a>
+                    <div class="space-y-3 bg-indigo-50 p-6 rounded-3xl border border-indigo-100 shadow-sm">
+                        <p class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Painel Admin</p>
+                        <a href="{{ url_for('admin.dashboard') }}" class="block bg-white text-slate-900 p-3 rounded-xl text-center font-bold text-xs uppercase tracking-widest">Estatísticas</a>
+                        <a href="{{ url_for('admin.tv_panel') }}" class="block bg-emerald-600 text-white p-3 rounded-xl text-center font-black text-xs uppercase tracking-widest">📺 Abrir Painel TV</a>
+                        <a href="{{ url_for('admin.view_delete_logs') }}" class="block bg-red-50 text-red-600 border border-red-100 p-3 rounded-xl text-center font-black text-xs uppercase tracking-widest">🛡️ Auditoria de Logs</a>
                     </div>
                 {% endif %}
 
@@ -208,7 +216,7 @@
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                         {% endif %}
                     </div>
-                    <div class="flex-1">
+                    <div class="flex-1 text-left">
                         <p class="text-sm font-bold text-slate-900 leading-tight">{{ message }}</p>
                     </div>
                     <button @click="show = false" class="text-slate-300 hover:text-slate-500 transition-all p-1">
@@ -231,11 +239,11 @@
             <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-10">
                 <div class="col-span-1 md:col-span-2 text-left">
                     <span class="text-2xl font-black text-slate-800 uppercase tracking-tighter">Smart<span class="text-indigo-600">Agenda</span></span>
-                    <p class="text-slate-400 text-sm mt-4 max-w-sm font-medium leading-relaxed text-left">Sistema especializado em gestão de tempo para clínicas e profissionais de saúde.</p>
+                    <p class="text-slate-400 text-sm mt-4 max-w-sm font-medium leading-relaxed">Sistema especializado em gestão de tempo para clínicas e profissionais de saúde.</p>
                 </div>
                 <div class="text-left">
                     <span class="text-[10px] font-black text-slate-900 uppercase tracking-[0.2em] mb-4 block">Navegação</span>
-                    <ul class="space-y-2">
+                    <ul class="space-y-2 text-left">
                         <li><a href="{{ url_for('main.index') }}" class="text-xs text-slate-500 hover:text-indigo-600 font-bold">Início</a></li>
                         <li><a href="{{ url_for('main.list_services') }}" class="text-xs text-slate-500 hover:text-indigo-600 font-bold">Serviços</a></li>
                         <li><a href="{{ url_for('main.public_professionals') }}" class="text-xs text-slate-500 hover:text-indigo-600 font-bold">Equipe Médica</a></li>

@@ -47,7 +47,7 @@ def explore_category(category_name):
 @main_bp.route('/book/<int:service_id>', methods=['GET', 'POST'])
 @login_required
 def book_service(service_id):
-    # 1. LIMPEZA INICIAL: Remove pendentes antigos antes de qualquer lógica
+    # 1. LIMPEZA INICIAL
     limpar_agendamentos_expirados()
     
     service = Service.query.get_or_404(service_id)
@@ -61,14 +61,23 @@ def book_service(service_id):
         selected_date = now.date()
         date_str = selected_date.strftime('%Y-%m-%d')
 
-    # Configuração de Horários
-    working_hours = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"]
+    # --- NOVA LÓGICA SÊNIOR: GERAÇÃO DINÂMICA 24H ---
+    # Substituímos a lista fixa por um gerador que percorre o dia todo
+    working_hours = []
+    current_time_iterator = datetime.combine(selected_date, datetime.min.time()) # Começa 00:00
+    end_of_day = datetime.combine(selected_date, datetime.max.time())
+
+    # Enquanto houver tempo no dia para a duração do serviço
+    while current_time_iterator + timedelta(minutes=service.duration_minutes) <= end_of_day:
+        working_hours.append(current_time_iterator.strftime('%H:%M'))
+        # Avança de 60 em 60 min (ou use service.duration_minutes para slots colados)
+        current_time_iterator += timedelta(hours=1) 
+    # ------------------------------------------------
 
     if request.method == 'POST':
         time_str = request.form.get('slot')
         user_phone = request.form.get('phone')
 
-        # Validações básicas
         if not user_phone or len(user_phone) < 8:
             flash('Por favor, informe um WhatsApp válido.', 'warning')
             return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
@@ -77,17 +86,14 @@ def book_service(service_id):
             flash('Por favor, selecione um horário.', 'warning')
             return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
 
-        # Cálculo de horários
         clean_time = time_str.strip()[:5]
         start_dt = datetime.combine(selected_date, datetime.strptime(clean_time, '%H:%M').time())
         end_dt = start_dt + timedelta(minutes=service.duration_minutes)
 
-        # 2. VALIDAÇÃO DE CONFLITO DE RECURSO (Sala/Profissional)
         if Appointment.check_resource_conflict(service.id, start_dt, end_dt):
             flash('Este horário acabou de ser ocupado. Escolha outro.', 'danger')
             return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
 
-        # 3. VALIDAÇÃO DE CONFLITO DE USUÁRIO (Evita o cliente marcar duas coisas ao mesmo tempo)
         if Appointment.check_user_conflict(current_user.id, start_dt, end_dt):
             flash('Você já tem um compromisso neste horário.', 'warning')
             return redirect(url_for('main.book_service', service_id=service.id, date=date_str))
@@ -109,7 +115,6 @@ def book_service(service_id):
             return redirect(url_for('main.my_appointments'))
         except Exception as e:
             db.session.rollback()
-            print(f"Erro ao salvar agendamento: {e}")
             flash('Erro sistêmico ao processar agendamento.', 'danger')
 
     # --- GERAÇÃO DE SLOTS (Visualização) ---
@@ -119,9 +124,13 @@ def book_service(service_id):
         slot_start = datetime.combine(selected_date, slot_time_obj)
         slot_end = slot_start + timedelta(minutes=service.duration_minutes)
         
-        # O horário só está livre se o recurso estiver livre E for no futuro
         is_resource_free = not Appointment.check_resource_conflict(service.id, slot_start, slot_end)
-        is_future = slot_start > now
+        
+        # AJUSTE SÊNIOR: Se for Admin, 'is_future' é sempre True (permite testar/lançar retroativo)
+        if current_user.is_admin:
+            is_future = True
+        else:
+            is_future = slot_start > now
         
         slots.append({
             'time': slot_start, 
