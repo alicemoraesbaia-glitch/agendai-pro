@@ -85,21 +85,22 @@ def dashboard():
 # --- GESTÃO DE USUÁRIOS (VERSÃO ÚNICA E CORRETA) ---
 
 # --- Gestão de Usuários (Final do arquivo) ---
+# app/admin/routes.py
 
-@admin_bp.route('/admin/users')
+@admin_bp.route('/users')  # MANTENHA ASSIM. Não coloque '/admin/users' aqui.
 @login_required
 @admin_required
 def list_users():
-    # Sênior: Filtramos estritamente para não misturar no dashboard
-    # Admins/Staff: Quem tem flag is_admin OU role de staff/admin
     admins = User.query.filter(
         (User.is_admin == True) | (User.role.in_(['admin', 'staff']))
     ).filter(User.deleted_at == None).all()
 
-    # Pacientes: APENAS quem tem role 'patient' E não é admin
     patients = User.query.filter_by(role='patient', is_admin=False, deleted_at=None).all()
 
-    return render_template('admin/users.html', admins=admins, patients=patients)
+    # O nome do arquivo deve ser users_list.html dentro da pasta templates/admin/
+    return render_template('admin/users_list.html', admins=admins, patients=patients)
+
+
 
 @admin_bp.route('/admin/user/new', methods=['GET', 'POST'])
 @login_required
@@ -148,19 +149,52 @@ def new_user():
 @admin_required
 def edit_user(id):
     user = User.query.get_or_404(id)
+    
     if request.method == 'POST':
-        user.name = request.form.get('username')
+        # 1. Atualiza campos básicos
+        # Atenção: usei .get('name') pois é como está no novo HTML que te passei
+        user.name = request.form.get('name') 
         user.email = request.form.get('email')
-        new_role = request.form.get('role')
+        new_role = request.form.get('role') # 'patient' ou 'admin'
         
-        if user.id == current_user.id and new_role == 'cliente':
+        # 2. Gestão de Segurança (Não deixa o admin se auto-rebaixar)
+        if user.id == current_user.id and new_role != 'admin':
             flash('Erro crítico: Você não pode remover seu próprio acesso administrativo.', 'danger')
         else:
+            # Sincroniza o role com o is_admin
+            user.role = new_role
             user.is_admin = (new_role == 'admin')
+
+        # 3. Lógica de Perfis Específicos
+        if user.role == 'patient':
+            # Se não existir o perfil de paciente, cria um
+            if not user.patient_profile:
+                from app.models import PatientProfile
+                user.patient_profile = PatientProfile(user_id=user.id)
             
-        db.session.commit()
-        flash(f'Perfil de {user.name} atualizado!', 'success')
-        return redirect(url_for('admin.list_users'))
+            # Preenche os dados do perfil de paciente
+            user.patient_profile.cpf = request.form.get('cpf')
+            user.patient_profile.insurance_plan = request.form.get('insurance_plan')
+            user.patient_profile.medical_notes = request.form.get('notes_bio') # Se usar o campo de notas
+            
+        else: # Se for admin ou staff
+            # Se não existir o perfil de staff, cria um
+            if not user.staff_profile:
+                from app.models import StaffProfile
+                user.staff_profile = StaffProfile(user_id=user.id)
+            
+            user.staff_profile.professional_reg = request.form.get('professional_reg')
+            user.staff_profile.specialty = request.form.get('specialty')
+            user.staff_profile.bio = request.form.get('notes_bio')
+
+        try:
+            db.session.commit()
+            flash(f'Perfil de {user.name} atualizado com sucesso!', 'success')
+            return redirect(url_for('admin.list_users'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Erro ao salvar: {str(e)}', 'danger')
+
     return render_template('admin/edit_user.html', user=user)
 
 @admin_bp.route('/user/<int:id>/delete', methods=['POST'])
@@ -196,21 +230,24 @@ def list_all_appointments():
 @login_required
 @admin_required
 def update_status(id, new_status):
-    from datetime import datetime
+    from datetime import datetime, date # Adicionado 'date'
     import logging
     
     appt = Appointment.query.get_or_404(id)
+    hoje = date.today() # Pegamos apenas a data atual
     
     # --- VALIDAÇÃO SÊNIOR: Bloqueio de Especialista Duplicado ---
     if new_status == 'in_progress':
         resource_id = appt.service.resource_id if appt.service else None
         
         if resource_id:
-            # Verifica se o especialista já está ocupado
+            # CORREÇÃO: Filtramos também pela data de início (hoje)
             conflito = Appointment.query.join(Appointment.service).filter(
                 Appointment.status == 'in_progress',
                 Service.resource_id == resource_id,
-                Appointment.id != id
+                Appointment.id != id,
+                # Garante que só bloqueie se houver alguém em atendimento HOJE
+                db.func.date(Appointment.start_datetime) == hoje 
             ).first()
             
             if conflito:
@@ -223,6 +260,8 @@ def update_status(id, new_status):
 
         # Se livre, grava início real
         appt.actual_start = datetime.now()
+    
+    # ... (restante do seu dicionário de mensagens e try/except permanece igual)
     
     # Dicionário de mensagens
     messages = {
@@ -482,25 +521,21 @@ def view_delete_logs():
     logs = AuditLog.query.order_by(AuditLog.created_at.desc()).all()
     return render_template('admin/logs_deletados.html', logs=logs)
 
-@admin_bp.route('/api/atendimentos-tv')
+from flask import jsonify
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload
+from datetime import datetime
+
+@admin_bp.route('/api/atendimentos_tv') # Rota com underscore
 @login_required
 @admin_required
 def api_atendimentos_tv():
-    from datetime import datetime
     now = datetime.now()
     today = now.date()
     
-    # CONFIGURAÇÃO SENIOR: Define o fim do expediente (Ex: 18:00)
-    # Você pode mudar isso para 19, 20, ou buscar de uma tabela de configurações
-    HORA_LIMITE_EXPEDIENTE = 23
-
-    # Se já passou da hora limite, podemos retornar uma lista vazia ou 
-    # focar apenas em quem ainda está "em andamento" (casos de atraso)
-    if now.hour >= HORA_LIMITE_EXPEDIENTE:
-        # Opcional: Logar que o expediente encerrou
-        pass
-
-    atendimentos = Appointment.query.filter(
+    # 1. Busca Atendimentos Ativos (Lado Esquerdo)
+    # Filtra por hoje e status 'in_progress'
+    atendimentos_query = Appointment.query.filter(
         func.date(Appointment.start_datetime) == today,
         Appointment.status == 'in_progress'
     ).options(
@@ -508,15 +543,29 @@ def api_atendimentos_tv():
         joinedload(Appointment.service).joinedload(Service.resource)
     ).all()
 
-    data = []
-    for appt in atendimentos:
-        data.append({
-            'paciente': appt.user.name or appt.user.username,
-            'sala': f"SALA {atendimentos.index(appt) + 1}",
-            'especialista': appt.service.resource.name if (appt.service and appt.service.resource) else 'Equipe'
-        })
-    
-    return jsonify(data)
+    # 2. Busca Fila de Espera (Lado Direito)
+    # Filtra por hoje e status 'confirmed'
+    espera_query = Appointment.query.filter(
+        func.date(Appointment.start_datetime) == today,
+        Appointment.status == 'confirmed'
+    ).options(
+        joinedload(Appointment.user),
+        joinedload(Appointment.service)
+    ).order_by(Appointment.start_datetime.asc()).all()
+
+    return jsonify({
+        'atendimentos': [{
+            'paciente': (a.user.name or a.user.username) if a.user else "Sem Nome",
+            'sala': f"SALA {atendimentos_query.index(a) + 1}",
+            'especialista': a.service.resource.name if (a.service and a.service.resource) else 'Equipe'
+        } for a in atendimentos_query],
+        
+        'espera': [{
+            'paciente': (e.user.name or e.user.username) if e.user else "Paciente Externo",
+            'servico': e.service.name if e.service else 'Consulta',
+            'horario': e.start_datetime.strftime('%H:%M') if e.start_datetime else '--:--'
+        } for e in espera_query]
+    })
 
 
 @admin_bp.route('/testar-chamada-agora')
@@ -544,3 +593,14 @@ def testar_chamada_agora():
     db.session.commit()
     
     return f"Sucesso! O paciente {user.name} foi inserido como 'Em Atendimento'. Olhe para a TV agora!"
+
+
+@admin.route('/usuario/<int:id>')
+@login_required
+def view_profile(id):
+    # Verifica se o usuário logado é admin
+    if not current_user.is_admin:
+        abort(403)
+        
+    user = User.query.get_or_404(id)
+    return render_template('admin/user_profile.html', user=user)

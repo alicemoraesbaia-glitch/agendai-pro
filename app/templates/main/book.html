@@ -1,103 +1,119 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto animate-fade-in pb-12 px-4">
+<div class="max-w-5xl mx-auto animate-fade-in pb-20 px-4">
     
-    <div class="flex items-center justify-between mb-6 px-2">
-        <nav class="flex items-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-            <a href="{{ url_for('main.index') }}" class="hover:text-indigo-600 transition-colors">Serviços</a>
-            <span class="mx-2 opacity-30">/</span>
+    <div class="flex items-center justify-between mb-8 px-2">
+        <nav class="flex items-center text-[10px] font-black uppercase tracking-widest text-slate-400" aria-label="Breadcrumb">
+            <a href="{{ url_for('main.index') }}" class="hover:text-primary transition-colors">Serviços</a>
+            <svg class="w-3 h-3 mx-2 opacity-30" fill="currentColor" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg>
             <span class="text-slate-900">Finalizar Reserva</span>
         </nav>
 
         <a href="{{ url_for('main.index') }}" 
-           class="group flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-indigo-500 transition-all active:scale-95">
-            <svg class="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+           class="group flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:border-primary hover:text-primary transition-all active:scale-95 shadow-sm">
+            <svg class="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/>
             </svg>
             Voltar
         </a>
     </div>
 
-    <div class="bg-white shadow-xl rounded-[2.5rem] overflow-hidden border border-slate-100">
-        <div class="flex flex-col lg:flex-row">
+    <div class="bg-white/70 backdrop-blur-2xl shadow-[0_32px_64px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] overflow-hidden border border-white/40 flex flex-col lg:flex-row min-h-[600px]">
+        
+        <div class="lg:w-[380px] bg-slate-900 p-10 lg:p-12 text-white flex flex-col justify-between relative overflow-hidden">
+            <div class="absolute -top-12 -right-12 w-64 h-64 bg-primary/20 rounded-full blur-[80px]"></div>
+            <div class="absolute -bottom-20 -left-20 w-48 h-48 bg-purple-500/10 rounded-full blur-[60px]"></div>
             
-            <div class="lg:w-[320px] bg-slate-900 p-8 lg:p-10 text-white flex flex-col justify-between relative overflow-hidden">
-                <div class="absolute -top-12 -right-12 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl"></div>
+            <div class="relative z-10">
+                <div class="inline-flex items-center justify-center w-14 h-14 bg-primary rounded-[1.5rem] mb-10 shadow-2xl shadow-primary/40 group-hover:rotate-6 transition-transform">
+                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
                 
-                <div class="relative z-10">
-                    <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center mb-8 shadow-lg">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                    </div>
-                    <span class="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-2 block">Serviço:</span>
-                    <h2 class="text-3xl font-black leading-tight tracking-tighter mb-4">{{ service.name }}</h2>
-                    <p class="text-slate-400 text-xs leading-relaxed opacity-90">{{ service.description or "Atendimento especializado premium." }}</p>
+                <div class="space-y-2">
+                    <span class="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Resumo do Agendamento</span>
+                    <h2 class="text-4xl font-black leading-none tracking-tighter">{{ service.name }}</h2>
+                    <p class="text-slate-400 text-sm font-medium leading-relaxed pt-2">{{ service.description or "Atendimento especializado premium com suporte dedicado." }}</p>
                 </div>
 
-                <div class="mt-12 space-y-4 relative z-10">
-                    <div class="p-4 bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[9px] font-black text-slate-500 uppercase">Duração</span>
-                            <span class="text-xs font-bold">{{ service.duration_minutes }} min</span>
+                <div class="mt-12 space-y-6">
+                    <div class="flex items-center gap-4 group">
+                        <div class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         </div>
-                        <div class="h-px bg-white/5 my-2"></div>
-                        <span class="text-[9px] font-black text-slate-500 uppercase mb-1">Investimento</span>
-                        <div class="text-2xl font-black text-white">R$ {{ "%.2f"|format(service.price_cents / 100) }}</div>
+                        <div>
+                            <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Duração Estimada</p>
+                            <p class="text-sm font-bold text-white">{{ service.duration_minutes }} minutos</p>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="flex-1 p-8 lg:p-12 bg-white">
+            <div class="relative z-10 mt-12 pt-8 border-t border-white/10">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Total do Investimento</p>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-lg font-bold text-primary">R$</span>
+                    <span class="text-5xl font-black tracking-tighter">{{ "%.2f"|format(service.price_cents / 100) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 p-8 lg:p-14 bg-white/30 backdrop-blur-sm">
+            
+            <form method="GET" id="dateForm" class="mb-12">
+                <div class="flex items-center gap-3 mb-6">
+                    <span class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-black italic shadow-lg">01</span>
+                    <label class="text-[11px] font-black text-slate-900 uppercase tracking-widest">Escolha o melhor dia</label>
+                </div>
                 
-                <form method="GET" id="dateForm" class="mb-8">
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4">1. Escolha o dia</label>
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-indigo-600">
-                            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                        </div>
-                        <input type="date" name="date" id="bookingDate" value="{{ date }}" onchange="this.form.submit()" 
-                               class="w-full pl-12 pr-4 py-3.5 bg-slate-50 border-2 border-transparent rounded-xl text-slate-900 font-bold text-sm focus:bg-white focus:border-indigo-100 transition-all cursor-pointer">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-primary transition-colors">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                     </div>
-                </form>
+                    <input type="date" name="date" id="bookingDate" value="{{ date }}" onchange="this.form.submit()" 
+                           class="w-full pl-14 pr-6 py-5 bg-white border border-slate-200 rounded-[1.5rem] text-slate-900 font-extrabold text-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all cursor-pointer shadow-sm">
+                </div>
+            </form>
 
-                <div class="h-px bg-slate-100 mb-8"></div>
-
-                <form method="POST" action="{{ url_for('main.book_service', service_id=service.id) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                    <input type="hidden" name="date" value="{{ date }}">
-                    
-                    <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">2. Selecione o Horário (24h)</label>
+            <form method="POST" action="{{ url_for('main.book_service', service_id=service.id) }}" class="space-y-12">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <input type="hidden" name="date" value="{{ date }}">
+                
+                <div>
+                    <div class="flex items-center gap-3 mb-8">
+                        <span class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-black italic shadow-lg">02</span>
+                        <label class="text-[11px] font-black text-slate-900 uppercase tracking-widest">Selecione o horário (24h)</label>
+                    </div>
 
                     {% if slots %}
-                        {# MACRO PARA RENDERIZAR GRADES DE HORÁRIO #}
                         {% macro render_grid(slots_list, label) %}
                             {% if slots_list %}
-                                <div class="mb-8">
-                                    <h5 class="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                        <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+                                <div class="mb-10">
+                                    <h5 class="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                        <span class="w-2 h-0.5 bg-primary rounded-full"></span>
                                         {{ label }}
                                     </h5>
                                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                         {% for slot in slots_list %}
-                                        <label class="relative block">
+                                        <label class="relative block group">
                                             <input type="radio" name="slot" value="{{ slot.time.strftime('%H:%M') }}" 
                                                    class="hidden peer" 
                                                    {% if not slot.available %}disabled{% endif %} required>
                                             
-                                            <div class="text-center py-3 rounded-xl border-2 transition-all relative overflow-hidden
+                                            <div class="text-center py-4 rounded-2xl border-2 transition-all relative overflow-hidden active:scale-95
                                                 {% if slot.available %}
-                                                    border-slate-100 text-slate-700 font-black cursor-pointer bg-white 
-                                                    hover:border-indigo-500 hover:text-indigo-600
-                                                    peer-checked:bg-indigo-600 peer-checked:text-white peer-checked:border-indigo-600
+                                                    border-slate-100 text-slate-800 font-bold cursor-pointer bg-white shadow-sm
+                                                    hover:border-primary/40 hover:bg-indigo-50/30
+                                                    peer-checked:bg-slate-900 peer-checked:text-white peer-checked:border-slate-900 peer-checked:shadow-xl
                                                 {% else %}
-                                                    bg-slate-50 border-slate-50 text-slate-300 font-bold cursor-not-allowed
+                                                    bg-slate-50 border-slate-50 text-slate-300 font-medium cursor-not-allowed
                                                 {% endif %}">
                                                 
                                                 <span class="text-xs tracking-tight">{{ slot.time.strftime('%H:%M') }}</span>
                                                 
                                                 {% if not slot.available %}
-                                                    <div class="absolute inset-0 flex items-center justify-center bg-slate-50/60 backdrop-blur-[1px]">
-                                                        <span class="text-[7px] font-black uppercase tracking-tighter text-slate-400">Ocupado</span>
+                                                    <div class="absolute inset-0 flex items-center justify-center bg-slate-50/40 backdrop-blur-[1px]">
+                                                        <span class="text-[7px] font-black uppercase tracking-tighter text-slate-400">Indisponível</span>
                                                     </div>
                                                 {% endif %}
                                             </div>
@@ -108,37 +124,53 @@
                             {% endif %}
                         {% endmacro %}
 
-                        {# DIVISÃO POR PERÍODOS #}
-                        {{ render_grid(slots|selectattr('time.hour', 'lt', 12)|list, 'Manhã') }}
-                        {{ render_grid(slots|selectattr('time.hour', 'ge', 12)|selectattr('time.hour', 'lt', 18)|list, 'Tarde') }}
-                        {{ render_grid(slots|selectattr('time.hour', 'ge', 18)|list, 'Noite & Plantão') }}
+                        {{ render_grid(slots|selectattr('time.hour', 'lt', 12)|list, 'Período da Manhã') }}
+                        {{ render_grid(slots|selectattr('time.hour', 'ge', 12)|selectattr('time.hour', 'lt', 18)|list, 'Período da Tarde') }}
+                        {{ render_grid(slots|selectattr('time.hour', 'ge', 18)|list, 'Período da Noite') }}
 
                     {% else %}
-                        <div class="col-span-full py-8 bg-slate-50 rounded-2xl text-center border-2 border-dashed border-slate-200 mb-8">
-                            <p class="text-slate-400 font-black uppercase tracking-widest text-[9px]">Sem horários disponíveis para esta data</p>
+                        <div class="py-12 bg-slate-50 rounded-[2rem] text-center border-2 border-dashed border-slate-200">
+                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                                <svg class="w-6 h-6 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                            <p class="text-slate-400 font-bold uppercase tracking-widest text-[9px]">Indisponível para esta data</p>
                         </div>
                     {% endif %}
+                </div>
 
-                    {% if slots %}
-                    <div class="mb-8 p-5 bg-indigo-50/50 rounded-2xl border-2 border-dashed border-indigo-100">
-                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">3. WhatsApp do Paciente</label>
-                        <input type="tel" name="phone" id="phoneInput" placeholder="55 (00) 00000-0000" required
-                               class="w-full px-5 py-3 bg-white border-2 border-indigo-100 rounded-xl text-slate-900 font-bold focus:border-indigo-600 outline-none transition-all">
+                {% if slots %}
+                <div class="space-y-6">
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-black italic shadow-lg">03</span>
+                        <label class="text-[11px] font-black text-slate-900 uppercase tracking-widest">Informações de Contato</label>
                     </div>
 
-                    <button type="submit" class="w-full bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-indigo-600 shadow-xl transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 tracking-widest uppercase text-[10px]">
-                        Finalizar Agendamento
+                    <div class="relative group p-6 bg-indigo-50/30 rounded-[2rem] border-2 border-dashed border-indigo-100/50">
+                        <label class="block text-[9px] font-black text-primary uppercase tracking-widest mb-3">Seu WhatsApp (Notificações)</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-primary">
+                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            </div>
+                            <input type="tel" name="phone" id="phoneInput" placeholder="55 (00) 00000-0000" required
+                                   class="w-full pl-14 pr-6 py-4 bg-white border border-slate-200 rounded-2xl text-slate-900 font-extrabold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm">
+                        </div>
+                        <p class="text-[8px] text-slate-400 font-bold uppercase mt-3 px-1 italic">Enviaremos um lembrete 1h antes do início.</p>
+                    </div>
+
+                    <button type="submit" class="w-full bg-slate-900 text-white font-black py-6 rounded-[1.8rem] hover:bg-primary shadow-[0_20px_40px_-10px_rgba(79,70,229,0.3)] transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-4 tracking-[0.2em] uppercase text-[11px]">
+                        Confirmar Agendamento Agora
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 5l7 7-7 7M5 12h14"/></svg>
                     </button>
-                    {% endif %}
-                </form>
-            </div>
+                </div>
+                {% endif %}
+            </form>
         </div>
     </div>
 </div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Data Mínima (Hoje)
+        // Data Mínima Dinâmica
         const dateInput = document.getElementById('bookingDate');
         if (dateInput) {
             const agora = new Date();
@@ -148,13 +180,18 @@
             if (!dateInput.value) dateInput.value = localISOTime;
         }
 
-        // Máscara de Telefone simplificada
+        // Formatação de Input de Telefone (Foco em Experiência do Usuário)
         const phoneInput = document.getElementById('phoneInput');
         if (phoneInput) {
-            phoneInput.addEventListener('input', (e) => e.target.value = e.target.value.replace(/\D/g, ''));
+            phoneInput.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                e.target.value = value;
+            });
+            
             phoneInput.addEventListener('blur', (e) => {
-                if (e.target.value.length >= 10 && !e.target.value.startsWith('55')) {
-                    e.target.value = '55' + e.target.value;
+                let value = e.target.value;
+                if (value.length >= 10 && !value.startsWith('55')) {
+                    e.target.value = '55' + value;
                 }
             });
         }

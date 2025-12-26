@@ -1,119 +1,148 @@
 {% extends "base.html" %}
 
+{% block title %}Gestão de Usuários | Smart Agenda{% endblock %}
+
 {% block content %}
-<div class="max-w-7xl mx-auto space-y-12 animate-fade-in">
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
-        <div>
-            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em] mb-2 block">Painel de Controle</span>
-            <h1 class="text-4xl font-black text-slate-900 tracking-tight italic">
+<div class="max-w-7xl mx-auto space-y-12 py-10 animate-in fade-in slide-in-from-bottom-6 duration-700">
+    
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 px-2">
+        <div class="space-y-2">
+            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] block ml-1">Administração</span>
+            <h1 class="text-5xl font-black text-slate-900 tracking-tighter italic">
                 Gestão de <span class="text-indigo-600">Usuários</span>
             </h1>
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-tight mt-2">Controle de acessos, permissões e histórico de pacientes</p>
         </div>
 
         <a href="{{ url_for('admin.new_user') }}" 
-           class="bg-slate-900 hover:bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-2xl shadow-slate-200 flex items-center justify-center gap-3 active:scale-95">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
-            </svg>
+           class="group bg-slate-900 hover:bg-indigo-600 text-white px-10 py-5 rounded-[2rem] font-black text-[11px] uppercase tracking-[0.2em] transition-all shadow-2xl shadow-slate-200 flex items-center justify-center gap-4 active:scale-95">
+            <div class="w-5 h-5 bg-white/10 rounded-full flex items-center justify-center group-hover:rotate-90 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M12 4v16m8-8H4" />
+                </svg>
+            </div>
             Novo Usuário
         </a>
     </div>
 
-    <section>
-        <div class="flex items-center gap-4 mb-6 px-2">
-            <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Equipe e Colaboradores</h2>
-            <div class="h-px flex-1 bg-slate-100"></div>
+    <section class="space-y-8">
+        <div class="flex items-center gap-6 px-2">
+            <h2 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Equipe e Colaboradores</h2>
+            <div class="h-[2px] w-full bg-slate-100 rounded-full"></div>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {% for user in admins %}
-            <div class="group bg-slate-900 rounded-[2rem] p-8 transition-all hover:-translate-y-1 border border-slate-800 relative overflow-hidden">
-                <div class="absolute top-0 right-0 p-4">
-                    {% if user.is_admin %}
-                        <span class="bg-indigo-500/20 text-indigo-400 text-[8px] font-black uppercase px-3 py-1 rounded-full border border-indigo-500/30">Master Admin</span>
-                    {% else %}
-                        <span class="bg-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase px-3 py-1 rounded-full border border-emerald-500/30">Staff</span>
-                    {% endif %}
+            <div class="group bg-slate-900 rounded-[2.5rem] p-9 transition-all hover:-translate-y-2 border border-slate-800 relative overflow-hidden shadow-2xl shadow-slate-200/50">
+                <div class="absolute top-0 right-0 p-6">
+                    <span class="{% if user.is_admin %}bg-indigo-500/10 text-indigo-400 border-indigo-500/20{% else %}bg-emerald-500/10 text-emerald-400 border-emerald-500/20{% endif %} text-[8px] font-black uppercase px-4 py-1.5 rounded-full border tracking-widest">
+                        {{ 'Master Admin' if user.is_admin else 'Staff' }}
+                    </span>
                 </div>
                 
                 <div class="relative z-10">
-                    <div class="w-12 h-12 {% if user.is_locked %}bg-red-500{% else %}bg-indigo-600{% endif %} rounded-2xl flex items-center justify-center mb-6 text-white shadow-lg">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <div class="w-14 h-14 {% if user.is_locked %}bg-rose-500{% else %}bg-indigo-600{% endif %} rounded-2xl flex items-center justify-center mb-8 text-white shadow-xl rotate-3 group-hover:rotate-0 transition-transform duration-500">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </div>
-                    <h3 class="text-white font-black text-xl mb-1 capitalize">{{ user.name or user.username }}</h3>
-                    <p class="text-slate-500 text-xs mb-8">{{ user.email }}</p>
+
+                    <h3 class="text-white font-black text-2xl mb-1 tracking-tight capitalize">{{ user.name or user.username }}</h3>
+                    <p class="text-slate-500 text-xs font-bold mb-10 tracking-wide">{{ user.email }}</p>
                     
-                    <div class="flex items-center gap-4">
-                        <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="text-white font-black text-[10px] uppercase tracking-widest hover:text-indigo-400 transition-colors">Editar</a>
+                    <div class="flex items-center gap-6 pt-6 border-t border-slate-800/50">
+                        <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="text-white font-black text-[10px] uppercase tracking-[0.2em] hover:text-indigo-400 transition-colors">Ajustar</a>
                         
                         {% if user.id != current_user.id %}
-                        <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" class="inline" onsubmit="return confirm('Remover este acesso da equipe?')">
+                        <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" class="inline" onsubmit="return confirm('⚠️ Remover este acesso administrativo?')">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="text-red-500/50 hover:text-red-500 font-black text-[10px] uppercase tracking-widest transition-colors">Remover</button>
+                            <button type="submit" class="text-rose-500/40 hover:text-rose-500 font-black text-[10px] uppercase tracking-[0.2em] transition-colors">Revogar</button>
                         </form>
                         {% endif %}
                     </div>
                 </div>
+
+                <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-indigo-600/5 rounded-full blur-3xl"></div>
             </div>
             {% endfor %}
         </div>
     </section>
 
-    <section>
-        <div class="flex items-center gap-4 mb-6 px-2">
-            <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Base de Pacientes</h2>
-            <div class="h-px flex-1 bg-slate-100"></div>
+    <section class="space-y-8">
+        <div class="flex items-center gap-6 px-2">
+            <h2 class="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] whitespace-nowrap">Base de Pacientes Ativos</h2>
+            <div class="h-[2px] w-full bg-slate-100 rounded-full"></div>
         </div>
 
-        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50/50 border-b border-slate-100">
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Paciente</th>
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ações de Gestão</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-50">
-                    {% for user in patients %}
+        <div class="bg-white rounded-[3rem] shadow-2xl shadow-slate-100/50 border border-slate-50 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-slate-50/50">
+                            <th class="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Informações do Cliente</th>
+                            <th class="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status de Acesso</th>
+                            <th class="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Ações Rápidas</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        {% for user in patients %}
                         {% if user.role == 'patient' and not user.is_admin %}
-                        <tr class="hover:bg-indigo-50/30 transition-all group">
-                            <td class="px-8 py-6">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 font-black text-[10px]">
+                        <tr class="hover:bg-slate-50/80 transition-all group">
+                            <td class="px-10 py-7">
+                                <div class="flex items-center gap-5">
+                                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-sm group-hover:scale-110 transition-transform">
                                         {{ (user.name[0] if user.name else 'P')|upper }}
                                     </div>
                                     <div class="flex flex-col">
-                                        <span class="font-bold text-slate-900 text-sm">{{ user.name or user.username }}</span>
-                                        <span class="text-[10px] text-slate-400 font-medium">{{ user.email }}</span>
+                                        <span class="font-black text-slate-900 text-base tracking-tight capitalize leading-tight">{{ user.name or user.username }}</span>
+                                        <span class="text-[11px] text-slate-400 font-bold uppercase mt-1 tracking-tighter italic">{{ user.email }}</span>
                                     </div>
                                 </div>
                             </td>
-                            <td class="px-8 py-6">
+                            <td class="px-10 py-7">
                                 {% if user.is_locked %}
-                                    <span class="px-2 py-1 bg-red-50 text-red-600 text-[8px] font-black uppercase rounded-md border border-red-100 tracking-tighter">Bloqueado</span>
+                                    <span class="inline-flex items-center px-3 py-1.5 bg-rose-50 text-rose-600 text-[9px] font-black uppercase rounded-xl border border-rose-100 tracking-widest">
+                                        <span class="w-1.5 h-1.5 bg-rose-500 rounded-full mr-2 animate-pulse"></span> Bloqueado
+                                    </span>
                                 {% else %}
-                                    <span class="px-2 py-1 bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase rounded-md border border-emerald-100 tracking-tighter">Ativo</span>
+                                    <span class="inline-flex items-center px-3 py-1.5 bg-emerald-50 text-emerald-600 text-[9px] font-black uppercase rounded-xl border border-emerald-100 tracking-widest">
+                                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2"></span> Ativo
+                                    </span>
                                 {% endif %}
                             </td>
-                            <td class="px-8 py-6">
-                                <div class="flex justify-end gap-6 items-center">
-                                    <a href="{{ url_for('admin.user_history', id=user.id) }}" class="text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-widest transition-colors">Histórico</a>
-                                    <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="text-slate-400 hover:text-slate-900 font-black text-[10px] uppercase tracking-widest transition-colors">Ajustar</a>
+                            <td class="px-10 py-7">
+                                <div class="flex justify-end gap-8 items-center">
+                                    <a href="{{ url_for('admin.user_history', id=user.id) }}" class="group flex items-center text-slate-400 hover:text-indigo-600 font-black text-[10px] uppercase tracking-widest transition-all">
+                                        Histórico
+                                        <span class="ml-1 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                                    </a>
+                                    <a href="{{ url_for('admin.edit_user', id=user.id) }}" class="p-2.5 bg-white border border-slate-100 text-slate-400 hover:text-slate-900 hover:border-slate-200 rounded-xl transition-all shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                    </a>
                                     
-                                    <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" onsubmit="return confirm('Excluir este paciente permanentemente?')">
+                                    <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" onsubmit="return confirm('⚠️ ATENÇÃO: Deseja excluir este paciente permanentemente?')">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button type="submit" class="text-slate-300 hover:text-red-500 font-black text-[10px] uppercase tracking-widest transition-colors">Excluir</button>
+                                        <button type="submit" class="p-2.5 text-slate-200 hover:text-rose-500 transition-all">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                        </button>
                                     </form>
                                 </div>
                             </td>
                         </tr>
                         {% endif %}
-                    {% endfor %}
-                </tbody>
-            </table>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="px-10 py-6 bg-slate-50/30 border-t border-slate-50 flex justify-between items-center">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Mostrando todos os registros da base de dados local</p>
+                <div class="flex gap-2">
+                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                    <span class="w-2 h-2 rounded-full bg-slate-200"></span>
+                    <span class="w-2 h-2 rounded-full bg-slate-200"></span>
+                </div>
+            </div>
         </div>
     </section>
 </div>

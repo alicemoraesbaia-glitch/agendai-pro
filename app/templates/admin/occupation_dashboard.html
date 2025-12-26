@@ -3,33 +3,34 @@
 {% block title %}Ocupação em Tempo Real | Smart Agenda{% endblock %}
 
 {% block content %}
-<div class="space-y-8 animate-in fade-in duration-700">
+<div class="max-w-7xl mx-auto space-y-8 animate-in fade-in duration-700 pb-20 px-4">
     
     {# CABEÇALHO DINÂMICO #}
     <div class="flex flex-col md:flex-row justify-between items-end gap-4 border-b border-slate-200 pb-6">
         <div>
-            <span class="text-indigo-600 font-black uppercase tracking-[0.3em] text-[10px]">Monitoramento</span>
-            <h1 class="text-4xl font-black text-slate-900 tracking-tighter">
+            <span class="text-indigo-600 font-black uppercase tracking-[0.3em] text-[10px]">Monitoramento em Tempo Real</span>
+            <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter">
                 Ocupação 
                 <span class="text-slate-400 font-light">
                     {% if exibindo_amanha %}Amanhã{% else %}Hoje{% endif %}
                 </span>
             </h1>
             {% if exibindo_amanha %}
-            <p class="text-[10px] font-bold text-amber-500 uppercase mt-1 italic">
-                Modo Visualização: Agenda de {{ target_date.strftime('%d/%m') }}
+            <p class="text-[10px] font-bold text-amber-500 uppercase mt-1 italic tracking-widest">
+                📅 Agenda de {{ target_date.strftime('%d/%m/%Y') }}
             </p>
             {% endif %}
         </div>
-        <div class="flex items-center gap-4">
+        
+        <div class="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100">
             <div class="text-right">
-                <p class="text-[10px] font-black text-slate-400 uppercase">Atualização Automática</p>
-                <p class="text-sm font-bold text-emerald-500 flex items-center justify-end gap-2">
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Status do Servidor</p>
+                <p class="text-xs font-bold text-emerald-500 flex items-center justify-end gap-2">
                     <span class="relative flex h-2 w-2">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                    Sistema Online
+                    Sincronizado
                 </p>
             </div>
         </div>
@@ -37,113 +38,138 @@
 
     {# CARDS DE RESUMO #}
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div class="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</p>
-            <h3 class="text-3xl font-black text-slate-900">{{ appointments|length }}</h3>
+        <div class="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm transition-hover hover:shadow-md">
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Geral</p>
+            <h3 class="text-4xl font-black text-slate-900 tracking-tighter">{{ appointments|length }}</h3>
         </div>
-        <div class="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100">
-            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Confirmados</p>
-            <h3 class="text-3xl font-black text-emerald-700">
+        <div class="bg-emerald-50 p-6 rounded-[2.5rem] border border-emerald-100/50">
+            <p class="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1">Confirmados</p>
+            <h3 class="text-4xl font-black text-emerald-700 tracking-tighter">
                 {{ appointments|selectattr('status', 'equalto', 'confirmed')|list|length }}
             </h3>
         </div>
-        <div class="bg-amber-50 p-6 rounded-[2rem] border border-amber-100">
-            <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest">Pendentes</p>
-            <h3 class="text-3xl font-black text-amber-700">
+        <div class="bg-amber-50 p-6 rounded-[2.5rem] border border-amber-100/50">
+            <p class="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Pendentes</p>
+            <h3 class="text-4xl font-black text-amber-700 tracking-tighter">
                 {{ appointments|selectattr('status', 'equalto', 'pending')|list|length }}
             </h3>
         </div>
-        <div class="bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100">
-            <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Em Atendimento</p>
-            <h3 class="text-3xl font-black text-indigo-700">
+        <div class="bg-indigo-50 p-6 rounded-[2.5rem] border border-indigo-100/50 shadow-indigo-100/20">
+            <p class="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Na Sala</p>
+            <h3 class="text-4xl font-black text-indigo-700 tracking-tighter">
                 {{ appointments|selectattr('status', 'equalto', 'in_progress')|list|length }}
             </h3>
         </div>
     </div>
 
-    {# TABELA COM LÓGICA DE BLOQUEIO #}
-    <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
-        <table class="w-full text-left border-collapse">
-            <thead>
-                <tr class="bg-slate-50/50">
-                    <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Horário</th>
-                    <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</th>
-                    <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Serviço</th>
-                    <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ações</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-50">
-                {% for appt in appointments %}
-                <tr class="group hover:bg-slate-50/80 transition-all {% if appt.status in ['cancelled', 'completed'] %}opacity-50{% endif %}">
-                    <td class="px-8 py-6">
-                        <div class="flex flex-col">
-                            <span class="text-lg font-black text-slate-900">{{ appt.start_datetime.strftime('%H:%M') }}</span>
-                            {# Só mostra atraso se for HOJE #}
-                            {% if not exibindo_amanha and appt.status == 'pending' and appt.start_datetime < now %}
-                            <span class="text-[9px] font-black text-red-500 uppercase animate-pulse">Atrasado</span>
-                            {% endif %}
-                        </div>
-                    </td>
-                    <td class="px-8 py-6">
-                        <div class="flex flex-col">
-                            <span class="text-sm font-bold text-slate-800 capitalize">{{ appt.user.name or appt.user.username }}</span>
-                            <span class="text-[10px] text-slate-400 font-medium">{{ appt.user.phone or 'Sem telefone' }}</span>
-                        </div>
-                    </td>
-                    <td class="px-8 py-6">
-                        <span class="text-xs font-semibold text-slate-600">{{ appt.service.name }}</span>
-                    </td>
-                    <td class="px-8 py-6">
-                        {% if appt.status == 'confirmed' %}
-                            <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[9px] font-black uppercase">Confirmado</span>
-                        {% elif appt.status == 'in_progress' %}
-                            <span class="px-3 py-1 bg-indigo-600 text-white rounded-full text-[9px] font-black uppercase animate-pulse">Em Atendimento</span>
-                        {% elif appt.status == 'completed' %}
-                            <span class="px-3 py-1 bg-slate-800 text-slate-100 rounded-full text-[9px] font-black uppercase">Concluído</span>
-                        {% else %}
-                            <span class="px-3 py-1 bg-slate-100 text-slate-400 rounded-full text-[9px] font-black uppercase">{{ appt.status }}</span>
-                        {% endif %}
-                    </td>
-                    <td class="px-8 py-6 text-right">
-                        <div class="flex justify-end gap-2">
-                            {# TRAVA SÊNIOR: Ações só aparecem se NÃO for agenda de amanhã #}
-                            {% if not exibindo_amanha %}
-                                {% if appt.status in ['confirmed', 'arrived', 'pending'] %}
-                                    <form action="{{ url_for('admin.update_status', id=appt.id, new_status='in_progress') }}" method="POST">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase hover:bg-indigo-700 transition-all shadow-md flex items-center gap-2">
-                                            Chamar
-                                        </button>
-                                    </form>
-                                {% elif appt.status == 'in_progress' %}
-                                    <form action="{{ url_for('admin.update_status', id=appt.id, new_status='completed') }}" method="POST">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                        <button type="submit" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase hover:bg-black transition-all shadow-md flex items-center gap-2">
-                                            Concluir
-                                        </button>
-                                    </form>
+    {# TABELA #}
+    <div class="bg-white rounded-[3rem] border border-slate-100 shadow-2xl shadow-slate-200/50 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50/50 border-b border-slate-100">
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Horário</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Cliente</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Serviço</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status Atual</th>
+                        <th class="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ações de Fluxo</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-50">
+                    {% for appt in appointments %}
+                    <tr class="group hover:bg-slate-50/80 transition-all {% if appt.status == 'completed' %}bg-slate-50/30 opacity-60{% endif %}">
+                        <td class="px-8 py-6">
+                            <div class="flex flex-col">
+                                <span class="text-xl font-black text-slate-900 tracking-tighter">{{ appt.start_datetime.strftime('%H:%M') }}</span>
+                                {% if not exibindo_amanha and appt.status == 'pending' and appt.start_datetime < now %}
+                                <span class="text-[9px] font-black text-red-500 uppercase animate-pulse">Atrasado</span>
                                 {% endif %}
+                            </div>
+                        </td>
+
+                        <td class="px-8 py-6">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-extrabold text-slate-800 capitalize leading-tight">{{ appt.user.name or appt.user.username }}</span>
+                                <span class="text-[10px] text-slate-400 font-bold mt-0.5">{{ appt.phone or 'Sem contato' }}</span>
+                            </div>
+                        </td>
+
+                        <td class="px-8 py-6">
+                            <div class="flex items-center gap-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+                                <span class="text-xs font-bold text-slate-600 uppercase tracking-tight">{{ appt.service.name }}</span>
+                            </div>
+                        </td>
+
+                        <td class="px-8 py-6 text-center">
+                            {% if appt.status == 'confirmed' %}
+                                <span class="px-4 py-1.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-[9px] font-black uppercase">Confirmado</span>
+                            {% elif appt.status == 'in_progress' %}
+                                <span class="px-4 py-1.5 bg-indigo-600 text-white rounded-xl text-[9px] font-black uppercase animate-pulse shadow-lg shadow-indigo-200">Em Atendimento</span>
+                            {% elif appt.status == 'completed' %}
+                                <span class="px-4 py-1.5 bg-slate-800 text-slate-100 rounded-xl text-[9px] font-black uppercase">Concluído</span>
+                            {% elif appt.status == 'cancelled' %}
+                                <span class="px-4 py-1.5 bg-red-50 text-red-500 border border-red-100 rounded-xl text-[9px] font-black uppercase">Cancelado</span>
                             {% else %}
-                                {# Visual para quando os botões estão bloqueados #}
-                                <span class="text-[9px] font-black text-slate-300 uppercase italic tracking-widest">Agendado</span>
+                                <span class="px-4 py-1.5 bg-slate-100 text-slate-500 rounded-xl text-[9px] font-black uppercase">{{ appt.status }}</span>
                             {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="5" class="px-8 py-12 text-center text-slate-400 font-bold uppercase text-xs">
-                        Nenhum agendamento para {% if exibindo_amanha %}amanhã{% else %}hoje{% endif %}.
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </td>
+
+                        <td class="px-8 py-6 text-right">
+                            <div class="flex justify-end items-center gap-3">
+                                {% if not exibindo_amanha %}
+                                    {% if appt.status in ['confirmed', 'arrived', 'pending'] %}
+                                        <form action="{{ url_for('admin.update_status', id=appt.id, new_status='in_progress') }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" class="px-6 py-2.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 active:scale-95">
+                                                Chamar agora
+                                            </button>
+                                        </form>
+                                    {% elif appt.status == 'in_progress' %}
+                                        <form action="{{ url_for('admin.update_status', id=appt.id, new_status='completed') }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                                            <button type="submit" class="px-6 py-2.5 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100 active:scale-95">
+                                                Concluir Atendimento
+                                            </button>
+                                        </form>
+                                    {% elif appt.status == 'completed' %}
+                                        <span class="text-[10px] font-black text-emerald-500 flex items-center gap-1 uppercase italic">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+                                            Horário Liberado
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-[9px] font-black text-slate-300 uppercase italic tracking-[0.2em]">Agendado</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="px-8 py-20 text-center">
+                            <div class="flex flex-col items-center opacity-30">
+                                <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                <p class="font-black uppercase text-xs tracking-[0.3em]">Sem compromissos para este dia</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
 <script>
-    setTimeout(function(){ window.location.reload(1); }, 60000);
+    // Refresh inteligente para não interromper ações do usuário
+    let autoRefresh = setTimeout(function(){ window.location.reload(1); }, 60000);
+
+    // Se o usuário interagir com botões, pausamos o refresh por 2 minutos
+    document.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+            clearTimeout(autoRefresh);
+            autoRefresh = setTimeout(function(){ window.location.reload(1); }, 120000);
+        });
+    });
 </script>
 {% endblock %}

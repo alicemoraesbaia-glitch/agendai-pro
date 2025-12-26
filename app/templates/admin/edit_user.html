@@ -1,133 +1,130 @@
 {% extends "base.html" %}
 
-{% block content %}
-<div class="max-w-3xl mx-auto space-y-8 py-10">
+{% block title %}{% if user %}Editar{% else %}Novo{% endif %} Usuário | Smart Agenda{% endblock %}
 
-    <div class="flex items-center justify-between">
-        <div>
-            <a href="{{ url_for('admin.list_users') }}" class="group flex items-center text-indigo-500 text-xs font-black uppercase tracking-widest hover:text-indigo-700 transition-colors">
-                <span class="mr-2 transform group-hover:-translate-x-1 transition-transform">←</span> Voltar para Lista
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-10 py-10 animate-in fade-in slide-in-from-bottom-4 duration-700 px-4">
+
+    {# HEADER #}
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+        <div class="space-y-4">
+            {# Ajuste: Certifique-se que o endpoint é 'admin.list_users' #}
+            <a href="{{ url_for('admin.list_users') }}" class="group inline-flex items-center text-indigo-500 text-[10px] font-black uppercase tracking-[0.2em] hover:text-indigo-700 transition-colors">
+                <svg class="w-4 h-4 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
+                Voltar para Lista
             </a>
-            <h1 class="text-4xl font-black text-slate-900 tracking-tight italic mt-4">
+            <h1 class="text-4xl font-black text-slate-900 tracking-tighter italic">
                 {% if user %} Editar {% else %} Novo {% endif %} <span class="text-indigo-600">Usuário</span>
             </h1>
-            {% if user %}
-                <p class="text-slate-500 text-sm mt-2 font-medium">ID do Registro: <span class="font-mono text-indigo-500">#{{ user.id }}</span></p>
-            {% else %}
-                <p class="text-slate-500 text-sm mt-2 font-medium">Cadastrando um novo cliente no sistema</p>
-            {% endif %}
         </div>
     </div>
 
-    <div class="bg-white/70 backdrop-blur-xl rounded-[2.5rem] shadow-xl border border-white p-8 md:p-12">
-        <form method="POST" class="space-y-8">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                    <label for="username" class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Nome Completo</label>
-                    <input type="text" name="username" id="username" 
-                        value="{{ user.username if user else '' }}" 
-                        placeholder="Ex: João Silva" required
-                        class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700">
-                </div>
-
-                <div class="space-y-2">
-                    <label for="email" class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Endereço de E-mail</label>
-                    <input type="email" name="email" id="email" 
-                        value="{{ user.email if user else '' }}" 
-                        placeholder="email@exemplo.com" required
-                        class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700">
-                </div>
-            </div>
-
-            {% if not user %}
-            <div class="space-y-2">
-                <label for="password" class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Senha Provisória</label>
-                <input type="password" name="password" id="password" required
-                    placeholder="Mínimo 6 caracteres"
-                    class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:bg-white outline-none transition-all font-bold text-slate-700">
-            </div>
-            {% endif %}
-
-            <div class="space-y-4">
-                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-4">Nível de Permissão</label>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="relative flex cursor-pointer">
-                        <input type="radio" name="role" value="cliente" class="sr-only peer" 
-                            {% if not user or not user.is_admin %}checked{% endif %}
-                            {% if user and user.id == current_user.id %}disabled{% endif %}>
-                        <div class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-5 peer-checked:border-indigo-500 peer-checked:bg-white peer-checked:ring-1 peer-checked:ring-indigo-500 transition-all">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-slate-900 font-black uppercase text-[10px] tracking-tight">Cliente Padrão</p>
-                                    <p class="text-slate-500 text-[10px] mt-1">Acesso limitado ao próprio perfil.</p>
-                                </div>
-                                <div class="text-indigo-500 opacity-0 peer-checked:opacity-100 transition-opacity">
-                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
-                                </div>
-                            </div>
-                        </div>
-                    </label>
-
-                    <label class="relative flex cursor-pointer">
-                        <input type="radio" name="role" value="admin" class="sr-only peer" 
-                            {% if user and user.is_admin %}checked{% endif %}>
-                        <div class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-5 peer-checked:border-indigo-500 peer-checked:bg-white peer-checked:ring-1 peer-checked:ring-indigo-500 transition-all">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <p class="text-indigo-600 font-black uppercase text-[10px] tracking-tight">Administrador</p>
-                                    <p class="text-slate-500 text-[10px] mt-1">Gestão total do sistema e agenda.</p>
-                                </div>
-                                <div class="text-indigo-500 opacity-0 peer-checked:opacity-100 transition-opacity">
-                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
-                                </div>
-                            </div>
-                        </div>
-                    </label>
-                </div>
-                
-                {% if user and user.id == current_user.id %}
-                    <p class="text-[9px] text-amber-500 font-bold ml-4 uppercase tracking-tighter">
-                        ⚠️ Você não pode remover seu próprio acesso administrativo.
-                    </p>
-                {% endif %}
-            </div>
-
-            <div class="pt-6">
-                <button type="submit" 
-                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-5 rounded-2xl shadow-lg transition-all active:scale-[0.98] uppercase tracking-[0.2em] text-[11px]">
-                    {% if user %} Salvar Alterações {% else %} Finalizar Cadastro {% endif %}
-                </button>
-            </div>
-        </form>
-    </div>
-
-    {% if user and user.id != current_user.id %}
-    <div class="bg-red-50/30 border border-red-100 rounded-[2.5rem] p-8 md:p-10 transition-all hover:bg-red-50/50">
-        <div class="flex items-center space-x-4 mb-6">
-            <div class="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-500">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                </svg>
-            </div>
-            <div>
-                <h3 class="text-red-600 font-black text-xs uppercase tracking-widest">Zona Crítica</h3>
-                <p class="text-red-400 text-[10px] font-medium uppercase">A exclusão apagará também o histórico de agendamentos.</p>
-            </div>
+    <div class="bg-white/80 backdrop-blur-2xl rounded-[3rem] shadow-2xl shadow-slate-200/50 border border-white overflow-hidden relative">
+        {# FORM HEADER DARK #}
+        <div class="bg-slate-900 p-8 md:p-12 text-white relative">
+            <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] mb-2">Informações de Acesso</p>
+            <h2 class="text-xl font-bold opacity-90 italic">Dados principais do registro</h2>
+            <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
         </div>
         
-        <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" 
-              onsubmit="return confirm('⚠️ Tem certeza que deseja excluir permanentemente?')">
+        <form method="POST" class="p-8 md:p-12 space-y-10 relative z-10">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" class="group flex items-center text-red-500 font-bold text-[10px] uppercase tracking-tighter hover:text-red-700 transition-colors">
-                Excluir conta permanentemente
-                <span class="ml-2 transform group-hover:translate-x-1 transition-transform">→</span>
+            
+            {# NOME E EMAIL #}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="space-y-3">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Nome Completo</label>
+                    <input type="text" name="name" value="{{ user.name if user else '' }}" required
+                        class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700">
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">E-mail</label>
+                    <input type="email" name="email" value="{{ user.email if user else '' }}" required
+                        class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700">
+                </div>
+            </div>
+
+            {# SENHA (APENAS PARA NOVO USUÁRIO) #}
+            {% if not user %}
+            <div class="space-y-3">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Senha Provisória</label>
+                <input type="password" name="password" required placeholder="Mínimo 6 caracteres"
+                    class="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700">
+            </div>
+            {% endif %}
+
+            <div class="h-px bg-slate-100"></div>
+
+            {# SEÇÃO DINÂMICA DE PERFIL #}
+            <div>
+                <p class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-6 ml-2 italic">Detalhes do Perfil Especializado</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {# Bloco de Paciente: Aparece se não houver user (novo) ou se o role for patient #}
+                    {% if not user or user.role == 'patient' %}
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">CPF</label>
+                        <input type="text" name="cpf" value="{{ user.patient_profile.cpf if user and user.patient_profile else '' }}" placeholder="000.000.000-00"
+                            class="w-full px-6 py-4 bg-indigo-50/30 border border-indigo-100/50 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700">
+                    </div>
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Convênio</label>
+                        <input type="text" name="insurance_plan" value="{{ user.patient_profile.insurance_plan if user and user.patient_profile else '' }}" placeholder="Ex: Particular ou Unimed"
+                            class="w-full px-6 py-4 bg-indigo-50/30 border border-indigo-100/50 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700">
+                    </div>
+                    {% endif %}
+
+                    {# Bloco Profissional: Aparece se o user for admin ou staff #}
+                    {% if user and user.role != 'patient' %}
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Registro (CRM/CRP)</label>
+                        <input type="text" name="professional_reg" value="{{ user.staff_profile.professional_reg if user and user.staff_profile else '' }}"
+                            class="w-full px-6 py-4 bg-indigo-50/30 border border-indigo-100/50 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700">
+                    </div>
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Especialidade</label>
+                        <input type="text" name="specialty" value="{{ user.staff_profile.specialty if user and user.staff_profile else '' }}"
+                            class="w-full px-6 py-4 bg-indigo-50/30 border border-indigo-100/50 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-700">
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# TIPO DE CONTA #}
+            <div class="space-y-4">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Tipo de Conta</label>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="relative flex cursor-pointer">
+                        <input type="radio" name="role" value="patient" class="sr-only peer" {% if not user or user.role == 'patient' %}checked{% endif %}>
+                        <div class="w-full p-5 rounded-2xl border-2 border-slate-50 bg-slate-50 peer-checked:border-indigo-500 peer-checked:bg-indigo-50 transition-all font-black uppercase text-[10px] tracking-widest text-center">Paciente</div>
+                    </label>
+                    <label class="relative flex cursor-pointer">
+                        <input type="radio" name="role" value="admin" class="sr-only peer" {% if user and user.role == 'admin' %}checked{% endif %}>
+                        <div class="w-full p-5 rounded-2xl border-2 border-slate-50 bg-slate-50 peer-checked:border-indigo-500 peer-checked:bg-indigo-50 transition-all font-black uppercase text-[10px] tracking-widest text-center">Administrador</div>
+                    </label>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-slate-900 hover:bg-indigo-600 text-white font-black py-6 rounded-2xl shadow-xl transition-all uppercase tracking-[0.3em] text-[11px]">
+                {% if user %} Salvar Alterações {% else %} Criar Usuário {% endif %}
             </button>
         </form>
     </div>
-    {% endif %}
 
+    {# ZONA DE EXCLUSÃO #}
+    {% if user and user.id != current_user.id %}
+    <div class="bg-rose-50/50 border border-rose-100 rounded-[2.5rem] p-8 flex items-center justify-between">
+        <div>
+            <h3 class="text-rose-600 font-black text-[10px] uppercase tracking-widest mb-1">Zona Crítica</h3>
+            <p class="text-rose-400 text-[10px] font-bold uppercase">A exclusão removerá todos os dados do banco.</p>
+        </div>
+        {# Ajuste: Certifique-se que o endpoint é 'admin.delete_user' #}
+        <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" onsubmit="return confirm('Apagar definitivamente?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="px-6 py-3 bg-white border border-rose-200 text-rose-500 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Excluir</button>
+        </form>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

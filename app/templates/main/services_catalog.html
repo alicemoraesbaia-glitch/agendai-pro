@@ -1,26 +1,26 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="space-y-6 animate-fade-in">
+<div class="max-w-7xl mx-auto space-y-10 animate-fade-in px-4">
     
-    <section class="relative py-4 md:py-6 border-b border-slate-100">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <div class="inline-flex items-center px-3 py-1 bg-indigo-50 rounded-full text-indigo-600 text-[9px] font-black uppercase tracking-[0.2em] mb-2 border border-indigo-100/50">
-                    📚 Menu de Especialidades
+    <section class="relative py-8 border-b border-slate-100">
+        <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+            <div class="space-y-4">
+                <div class="inline-flex items-center px-4 py-1.5 bg-indigo-50 rounded-full text-primary text-[10px] font-black uppercase tracking-[0.2em] border border-indigo-100/50">
+                    ✨ Especialidades Exclusivas
                 </div>
-                <h1 class="text-3xl md:text-5xl font-black tracking-tighter text-slate-900 leading-none">
-                    Nossos <span class="text-indigo-600 italic font-serif">serviços.</span>
+                <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-slate-900 leading-none">
+                    Nossos <span class="text-primary italic font-serif">serviços.</span>
                 </h1>
             </div>
 
-            <div class="flex items-center space-x-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-                <button class="filter-btn flex-shrink-0 bg-slate-900 text-white px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all shadow-md" 
+            <div class="flex items-center gap-3 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide">
+                <button class="filter-btn flex-shrink-0 bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-slate-200" 
                         data-category="all">
                     Todos
                 </button>
                 {% for category in categories %}
-                <button class="filter-btn flex-shrink-0 bg-white border border-slate-200 text-slate-500 px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest hover:border-indigo-400 hover:text-indigo-600 transition-all shadow-sm"
+                <button class="filter-btn flex-shrink-0 bg-white border border-slate-200 text-slate-500 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all shadow-sm"
                         data-category="{{ category }}">
                     {{ category }}
                 </button>
@@ -29,24 +29,20 @@
         </div>
     </section>
 
-    <section class="pb-16">
-        <div id="service-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <section class="pb-24">
+        <div id="service-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             
             {% for service in services %}
-            <div class="service-card group bg-white rounded-[2rem] p-3 border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-indigo-100/30 transition-all duration-500 relative"
+            <div class="service-card group bg-white rounded-[2.5rem] p-4 border border-slate-100 shadow-sm hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 relative flex flex-col h-full"
                  data-category="{{ service.category }}">
                 
-                {# BOTÃO DE DELETAR - Ajustado para o seu Blueprint #}
                 {% if current_user.is_authenticated and current_user.is_admin %}
-                <div class="absolute top-6 right-6 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div class="absolute top-6 right-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <form action="{{ url_for('main.delete_service', id=service.id) }}" method="POST" 
-                          onsubmit="return confirm('Sênior, confirma a exclusão definitiva de: {{ service.name }}?')">
-                        
-                        {# PROTEÇÃO CSRF #}
+                          onsubmit="return confirm('Confirmar exclusão de: {{ service.name }}?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                
-                        <button type="submit" class="p-2.5 bg-white/90 backdrop-blur-sm text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all shadow-lg border border-red-100">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <button type="submit" class="p-3 bg-white text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-2xl border border-red-50">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                         </button>
@@ -54,56 +50,48 @@
                 </div>
                 {% endif %}
 
-                {# LINK DE DETALHES - Ajustado para main.service_detail #}
                 <a href="{{ url_for('main.service_detail', service_id=service.id) }}" 
-                   class="block relative h-48 w-full rounded-[1.6rem] overflow-hidden mb-4 bg-slate-100 group">
+                   class="relative h-64 w-full rounded-[2rem] overflow-hidden mb-6 bg-slate-50 block">
                     
-                    {% if service.image_url %}
-                        <img src="{{ url_for('static', filename='assets/img/services/' + service.image_url) }}" 
-                             alt="{{ service.name }}"
-                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                             onerror="this.onerror=null; this.src='/static/assets/img/services/cardio.png';">
-                    {% else %}
-                        <img src="/static/assets/img/services/cardio.png" 
-                             alt="Serviço Padrão"
-                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                    {% endif %}
+                    <img src="{{ url_for('static', filename='assets/img/services/' + service.image_url) if service.image_url else 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=800&auto=format&fit=crop' }}" 
+                         alt="{{ service.name }}"
+                         class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+                         onerror="this.src='https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=800&auto=format&fit=crop'">
                     
-                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent opacity-60"></div>
-                    <div class="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-sm border border-white/50">
-                        <span class="text-[8px] font-black text-indigo-600 uppercase tracking-widest">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    
+                    <div class="absolute top-5 left-5">
+                        <span class="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-xl shadow-lg text-[9px] font-black text-primary uppercase tracking-[0.15em]">
                             {{ service.category }}
                         </span>
                     </div>
                 </a>
                 
-                <div class="px-2 pb-2">
-                    <h3 class="text-xl font-black text-slate-900 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors mb-2">
+                <div class="px-3 flex-grow flex flex-col">
+                    <h3 class="text-2xl font-extrabold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors mb-3">
                         {{ service.name }}
                     </h3>
                     
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="flex items-center text-[9px] font-black text-slate-400 bg-slate-50 px-2 py-1 rounded-lg">
-                            <svg class="w-3 h-3 mr-1 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="flex items-center text-[10px] font-black text-slate-400">
+                            <svg class="w-4 h-4 mr-1.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                             {{ service.duration_minutes }} MIN
                         </div>
                     </div>
 
-                    <div class="flex items-center justify-between pt-4 border-t border-slate-50">
+                    <div class="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
                         <div class="flex flex-col">
-                            <span class="text-[8px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Valor</span>
-                            <span class="text-lg font-black text-slate-900 leading-none">
+                            <span class="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Investimento</span>
+                            <span class="text-xl font-black text-slate-900">
                                 R$ {{ "%.2f"|format(service.price_cents / 100) }}
                             </span>
                         </div>
                         
-                        {# BOTÃO DETALHES - Ajustado para main.service_detail #}
                         <a href="{{ url_for('main.service_detail', service_id=service.id) }}" 
-                           class="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[8px] hover:bg-indigo-600 transition-all shadow-lg active:scale-95">
-                            Detalhes
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                           class="inline-flex items-center justify-center w-12 h-12 bg-slate-900 text-white rounded-2xl hover:bg-primary transition-all shadow-lg active:scale-90 group/btn">
+                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
                             </svg>
                         </a>
@@ -125,16 +113,19 @@
             btn.addEventListener('click', () => {
                 const cat = btn.dataset.category;
 
+                // Toggle Classes dos Botões
                 buttons.forEach(b => {
-                    b.classList.remove('bg-slate-900', 'text-white', 'shadow-md');
+                    b.classList.remove('bg-slate-900', 'text-white', 'shadow-xl', 'shadow-slate-200');
                     b.classList.add('bg-white', 'text-slate-500');
                 });
-                btn.classList.add('bg-slate-900', 'text-white', 'shadow-md');
+                btn.classList.add('bg-slate-900', 'text-white', 'shadow-xl', 'shadow-slate-200');
                 btn.classList.remove('bg-white', 'text-slate-500');
 
+                // Filtragem com Animação Simples
                 cards.forEach(card => {
                     if (cat === 'all' || card.dataset.category === cat) {
-                        card.style.display = 'block';
+                        card.style.display = 'flex';
+                        card.classList.add('animate-fade-in');
                     } else {
                         card.style.display = 'none';
                     }

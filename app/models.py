@@ -21,6 +21,9 @@ class User(UserMixin, db.Model):
     # Valores sugeridos: 'patient', 'staff', 'admin'
     role = db.Column(db.String(20), default='patient', server_default='patient')
     
+    patient_profile = db.relationship('PatientProfile', backref='user', uselist=False, cascade="all, delete-orphan")
+    staff_profile = db.relationship('StaffProfile', backref='user', uselist=False, cascade="all, delete-orphan")
+    
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     deleted_at = db.Column(db.DateTime, nullable=True)
@@ -79,6 +82,30 @@ class User(UserMixin, db.Model):
         except Exception:
             return None
         return User.query.get(user_id)
+    
+    
+class PatientProfile(db.Model):
+    __tablename__ = 'patient_profile'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False)
+    
+    # Campos exclusivos de pacientes
+    cpf = db.Column(db.String(14), unique=True)
+    birth_date = db.Column(db.Date)
+    phone = db.Column(db.String(20))
+    medical_notes = db.Column(db.Text)  # Alergias, observações fixas
+    insurance_plan = db.Column(db.String(50)) # Convênio
+
+class StaffProfile(db.Model):
+    __tablename__ = 'staff_profile'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False)
+    
+    # Campos exclusivos de funcionários/médicos
+    professional_reg = db.Column(db.String(50)) # CRM, CREFITO, etc
+    specialty = db.Column(db.String(100))
+    bio = db.Column(db.Text)
+    work_hours = db.Column(db.JSON) # Opcional: para guardar horários complexos
 
 class Resource(db.Model):
     __tablename__ = 'resource'
@@ -161,17 +188,18 @@ class Appointment(db.Model):
     @staticmethod
     def check_resource_conflict(service_id, start_dt, end_dt):
         """
-        LÓGICA SÊNIOR: 
-        Permite agendamentos simultâneos DESDE QUE sejam em recursos diferentes.
+        LÓGICA SÊNIOR AJUSTADA: 
+        Ignora agendamentos 'cancelled' e 'completed' para liberar o recurso
+        imediatamente após a conclusão do atendimento.
         """
         from app.models import Service, Appointment
         service = Service.query.get(service_id)
         if not service:
             return False
 
-        # Base da query: Horários que se sobrepõem e não estão cancelados
+        # AJUSTE AQUI: O conflito só existe se o status NÃO for 'cancelled' NEM 'completed'
         query = Appointment.query.filter(
-            Appointment.status != 'cancelled',
+            Appointment.status.notin_(['cancelled', 'completed']),
             Appointment.start_datetime < end_dt,
             Appointment.end_datetime > start_dt
         )
@@ -180,7 +208,7 @@ class Appointment(db.Model):
         if service.resource_id:
             query = query.filter(Appointment.resource_id == service.resource_id)
         else:
-            # Se não tem recurso, ele trava o serviço globalmente (comportamento antigo)
+            # Se não tem recurso, trava o serviço globalmente
             query = query.filter(Appointment.service_id == service_id)
 
         conflict = query.first()

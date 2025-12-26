@@ -1,53 +1,139 @@
 {% extends "base.html" %}
 
-{% block content %}
-<div class="max-w-6xl mx-auto p-6">
-    <h1 class="text-2xl font-black text-slate-900 mb-8 uppercase tracking-widest">Gestão de Usuários</h1>
+{% block title %}Gestão de Usuários | Smart Agenda{% endblock %}
 
-    <div class="mb-12">
-        <h2 class="text-[10px] font-black text-indigo-600 uppercase tracking-[.3em] mb-4">Equipe Administrativa</h2>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-10 py-10 animate-in fade-in slide-in-from-bottom-4 duration-700 px-4">
+    
+    {# HEADER #}
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+        <div>
+            <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-2 block">Painel Administrativo</span>
+            <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter italic">
+                Gestão de <span class="text-indigo-600">Usuários</span>
+            </h1>
+        </div>
+        
+        <a href="{{ url_for('admin.new_user') }}" 
+           class="bg-slate-900 hover:bg-indigo-600 text-white px-6 py-3.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl shadow-slate-200 flex items-center gap-3 active:scale-95 group shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 group-hover:rotate-90 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+            </svg>
+            Novo Registro
+        </a>
+    </div>
+
+    {# --- FILTROS SÊNIOR --- #}
+    <div class="flex gap-2 mb-4 px-2 overflow-x-auto no-scrollbar">
+        <button onclick="filterType('all')" class="btn-filter active bg-indigo-600 text-white px-6 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">Todos</button>
+        <button onclick="filterType('staff')" class="btn-filter bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">Equipe</button>
+        <button onclick="filterType('patient')" class="btn-filter bg-white text-slate-400 border border-slate-100 px-6 py-2 rounded-xl font-black text-[9px] uppercase tracking-widest transition-all">Pacientes</button>
+    </div>
+
+    {# SEÇÃO EQUIPE #}
+    <section class="user-section" id="section-staff">
+        <div class="flex items-center gap-4 mb-6 px-2">
+            <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Equipe Operacional</h2>
+            <div class="h-px flex-1 bg-slate-100"></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {% for admin in admins %}
-            <div class="bg-slate-900 text-white p-6 rounded-[2rem] border border-slate-800 shadow-xl">
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="font-bold text-lg">{{ admin.name }}</p>
-                        <p class="text-xs text-slate-400">{{ admin.email }}</p>
+            <div class="user-card group bg-slate-900 rounded-[2rem] p-5 border border-slate-800 flex items-center justify-between gap-6 min-h-[110px]" data-type="staff">
+                <div class="flex items-center gap-5 min-w-0">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                     </div>
-                    <span class="px-3 py-1 bg-indigo-500 rounded-full text-[8px] font-black uppercase">Admin</span>
+                    <div class="min-w-0">
+                        <h3 class="text-white font-black text-lg truncate">{{ admin.name }}</h3>
+                        {# MOSTRA ESPECIALIDADE SE EXISTIR #}
+                        <p class="text-indigo-400 text-[9px] font-black uppercase tracking-tighter">
+                            {{ admin.staff_profile.specialty if admin.staff_profile and admin.staff_profile.specialty else 'Administrador' }}
+                        </p>
+                    </div>
                 </div>
+                <a href="{{ url_for('admin.edit_user', id=admin.id) }}" class="h-10 w-10 bg-slate-800 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-xl flex items-center justify-center transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                </a>
             </div>
             {% endfor %}
         </div>
-    </div>
+    </section>
 
-    <div>
-        <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[.3em] mb-4">Base de Pacientes</h2>
-        <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead class="bg-slate-50 border-b border-slate-100">
-                    <tr>
-                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Nome</th>
-                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase">Email</th>
-                        <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">Ações</th>
+    {# SEÇÃO PACIENTES #}
+    <section class="user-section" id="section-patients">
+        <div class="flex items-center gap-4 mb-6 px-2">
+            <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Base de Pacientes</h2>
+            <div class="h-px flex-1 bg-slate-100"></div>
+        </div>
+
+        <div class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="bg-slate-50/50 border-b border-slate-100">
+                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Paciente</th>
+                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">CPF / Documento</th>
+                        <th class="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Ações</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
                     {% for patient in patients %}
-                    <tr class="hover:bg-slate-50/50 transition-colors">
-                        <td class="px-6 py-4 font-bold text-slate-700 text-sm">{{ patient.name }}</td>
-                        <td class="px-6 py-4 text-slate-500 text-sm">{{ patient.email }}</td>
-                        <td class="px-6 py-4 text-center">
-                            <a href="{{ url_for('admin.user_history', id=patient.id) }}" 
-                               class="text-indigo-600 font-black text-[10px] uppercase hover:underline">
-                               Ver Histórico
-                            </a>
+                    <tr class="user-card hover:bg-slate-50 transition-all group" data-type="patient">
+                        <td class="px-8 py-5">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center font-black text-xs group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                    {{ (patient.name or 'U')[0]|upper }}
+                                </div>
+                                <div>
+                                    <span class="block font-black text-slate-900 text-sm tracking-tight">{{ patient.name }}</span>
+                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">{{ patient.email }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-8 py-5 text-center">
+                            <span class="text-xs font-mono font-bold text-slate-500">
+                                {{ patient.patient_profile.cpf if patient.patient_profile and patient.patient_profile.cpf else '---' }}
+                            </span>
+                        </td>
+                        <td class="px-8 py-5 text-right">
+                            <div class="flex justify-end gap-2">
+                                <a href="{{ url_for('admin.edit_user', id=patient.id) }}" class="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2.5 2.5 0 113.536 3.536L12 20.414H8v-4l9.172-9.172z"/></svg>
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-    </div>
+    </section>
 </div>
+
+{# SCRIPT DE FILTRO SÊNIOR #}
+<script>
+function filterType(type) {
+    // Botões
+    document.querySelectorAll('.btn-filter').forEach(b => {
+        b.classList.remove('active', 'bg-indigo-600', 'text-white');
+        b.classList.add('bg-white', 'text-slate-400');
+    });
+    event.currentTarget.classList.add('active', 'bg-indigo-600', 'text-white');
+
+    // Seções e Cards
+    const staffSection = document.getElementById('section-staff');
+    const patientSection = document.getElementById('section-patients');
+
+    if (type === 'all') {
+        staffSection.style.display = 'block';
+        patientSection.style.display = 'block';
+    } else if (type === 'staff') {
+        staffSection.style.display = 'block';
+        patientSection.style.display = 'none';
+    } else {
+        staffSection.style.display = 'none';
+        patientSection.style.display = 'block';
+    }
+}
+</script>
 {% endblock %}

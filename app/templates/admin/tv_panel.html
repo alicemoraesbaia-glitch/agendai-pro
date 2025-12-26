@@ -8,7 +8,7 @@
             <h1 class="text-4xl font-black italic tracking-tighter">SMART<span class="text-indigo-500">AGENDA</span></h1>
             <div class="flex items-center gap-3 mt-1">
                 <p class="text-slate-500 text-xs font-bold uppercase tracking-[0.3em]">Painel de Atendimento</p>
-                <span id="status-badge" class="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-500/20">SISTEMA ATIVO</span>
+                <span id="status-badge" class="bg-emerald-500/10 text-emerald-500 text-[10px] font-black px-2 py-0.5 rounded border border-emerald-500/20 uppercase">Sistema Ativo</span>
             </div>
         </div>
         <div class="text-right">
@@ -27,28 +27,14 @@
                 </span>
                 Atendimento Atual
             </h2>
-
             <div id="container-cards" class="grid gap-6 overflow-y-auto pr-2 custom-scrollbar flex-grow content-start grid-cols-1 md:grid-cols-2">
                 </div>
         </div>
 
         <div class="col-span-4 flex flex-col h-full min-h-0">
-            <h2 class="text-xl font-black uppercase tracking-widest text-slate-500 mb-4">Fila de Espera</h2>
-            <div id="container-espera" class="bg-slate-900/50 rounded-[2.5rem] p-6 border border-slate-800 flex-grow overflow-y-auto custom-scrollbar shadow-inner">
-                <div class="space-y-3">
-                    {% for item in espera %}
-                    <div class="flex items-center justify-between p-4 bg-slate-900 rounded-2xl border-l-4 border-slate-700">
-                        <div class="min-w-0">
-                            <p class="text-lg font-black truncate text-slate-100">{{ item.user.name or item.user.username }}</p>
-                            <p class="text-[9px] font-black text-slate-500 uppercase">{{ item.service.name }}</p>
-                        </div>
-                        <div class="text-right ml-4">
-                            <p class="text-xl font-black text-indigo-500 tabular-nums">{{ item.start_datetime.strftime('%H:%M') }}</p>
-                        </div>
-                    </div>
-                    {% endfor %}
+            <h2 class="text-xl font-black uppercase tracking-widest text-slate-500 mb-4 text-center">Fila de Espera</h2>
+            <div id="container-espera" class="bg-slate-900/40 rounded-[2.5rem] p-6 border border-slate-800 flex-grow overflow-y-auto custom-scrollbar shadow-inner">
                 </div>
-            </div>
         </div>
     </div>
 </div>
@@ -57,110 +43,97 @@
     let listaAnterior = [];
     let audioLiberado = false;
     let intervaloRepeticao = null;
-    let chamadaConfirmada = false; // Estado para mudar status visual na TV
+    let pacienteConfirmadoAtual = null; 
 
-    const CONFIG_HORA_ENCERRAMENTO = 18;
-
+    // MOTOR DE VOZ
     function executarFala(nome, sala) {
-        if (!('speechSynthesis' in window) || !audioLiberado) return;
+        // Verifica se o áudio foi liberado e se a síntese de voz existe
+        if (!('speechSynthesis' in window) || !audioLiberado) {
+            console.warn("Áudio não liberado ou indisponível.");
+            return;
+        }
         
-        window.speechSynthesis.cancel();
+        window.speechSynthesis.cancel(); // Para falas anteriores
+        
         const mensagem = new SpeechSynthesisUtterance(`Atenção: ${nome}, favor dirigir-se à ${sala}`);
-        
         const voices = window.speechSynthesis.getVoices();
-        const vozBR = voices.find(v => v.lang === 'pt-BR') || voices.find(v => v.lang.includes('pt')) || voices[0];
-
+        
+        // Tenta pegar uma voz em português
+        const vozBR = voices.find(v => v.lang === 'pt-BR') || voices.find(v => v.lang.includes('pt'));
+        
         if (vozBR) mensagem.voice = vozBR;
         mensagem.lang = 'pt-BR';
-        mensagem.rate = 0.9;
+        mensagem.rate = 0.9; // Velocidade um pouco mais lenta para clareza
         window.speechSynthesis.speak(mensagem);
     }
 
     function iniciarChamadaRecursiva(nome, sala) {
-        pararChamadaManual(false); // Limpa loops sem resetar o flag de visual
-        chamadaConfirmada = false; // Novo paciente = nova chamada ativa
+        pararChamadaManual(false); 
+        pacienteConfirmadoAtual = null; 
         
+        console.log(`Iniciando chamada de áudio para: ${nome}`);
         executarFala(nome, sala);
+        
+        // Repete a cada 12 segundos enquanto o paciente não for confirmado
         intervaloRepeticao = setInterval(() => {
-            executarFala(nome, sala);
-        }, 12000); // Repete a cada 12 segundos
+            if (audioLiberado) executarFala(nome, sala);
+        }, 12000); 
     }
 
-    function pararChamadaManual(peloBotao = true) {
+    function pararChamadaManual(limparMemoria = true) {
         if (intervaloRepeticao) {
             clearInterval(intervaloRepeticao);
             intervaloRepeticao = null;
         }
         window.speechSynthesis.cancel();
-        
-        if (peloBotao) {
-            chamadaConfirmada = true;
-            atualizarPainel(); // Atualiza visual na hora
-        }
     }
 
-    // Adicione esta variável no topo, fora das funções
-let pacienteConfirmadoAtual = null; 
+    function confirmarPresenca(nomePaciente) {
+        pacienteConfirmadoAtual = nomePaciente; 
+        pararChamadaManual(false); 
+        atualizarPainel(); 
+    }
 
-function atualizarPainel() {
-    const url = "{{ url_for('admin.api_atendimentos_tv') }}";
-    const agora = new Date();
-    const horaAtual = agora.getHours();
+    function atualizarPainel() {
+        const url = "{{ url_for('admin.api_atendimentos_tv') }}";
 
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            const container = document.getElementById('container-cards');
-            const statusBadge = document.getElementById('status-badge');
-            let htmlGerado = '';
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                const containerCards = document.getElementById('container-cards');
+                const containerEspera = document.getElementById('container-espera');
+                
+                const listaAtendimentos = data.atendimentos || [];
 
-            // Se a lista esvaziar, limpamos a memória do confirmado
-            if (data.length === 0) {
-                pacienteConfirmadoAtual = null;
-                pararChamadaManual(false);
-            }
-
-            if (horaAtual >= CONFIG_HORA_ENCERRAMENTO && data.length === 0) {
-                // ... (manter lógica de expediente encerrado)
-            } else {
-                // 1. Verificação de áudio para o primeiro da lista
-                if (data.length > 0) {
-                    const primeiroNome = data[0].paciente;
+                // LÓGICA DO SOM: Se houver alguém chamando e for diferente do último chamado
+                if (listaAtendimentos.length > 0) {
+                    const primeiro = listaAtendimentos[0];
                     
-                    // Se mudou o paciente na fila, resetamos o confirmado para o novo
-                    if (!listaAnterior.includes(primeiroNome)) {
-                        pacienteConfirmadoAtual = null; 
-                        iniciarChamadaRecursiva(primeiroNome, data[0].sala);
+                    // Se o primeiro paciente mudou, inicia o som
+                    if (!listaAnterior.includes(primeiro.paciente)) {
+                        iniciarChamadaRecursiva(primeiro.paciente, primeiro.sala);
                     }
+                } else {
+                    pacienteConfirmadoAtual = null;
+                    pararChamadaManual(false);
                 }
 
-                data.forEach((item, index) => {
-                    let statusUI = '';
-                    let acaoUI = '';
+                // Renderização dos Cards Esquerdos
+                let htmlAtendimentos = '';
+                listaAtendimentos.forEach((item, index) => {
+                    const isConfirmado = (pacienteConfirmadoAtual === item.paciente);
+                    let statusUI = isConfirmado ? 
+                        `<span class="text-xs font-black text-indigo-200 uppercase tracking-widest">Em Atendimento</span>` : 
+                        `<div class="flex items-center gap-2"><div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div><span class="text-xs font-black text-white uppercase">Chamando...</span></div>`;
+                    
+                    let acaoUI = (index === 0 && !isConfirmado) ? 
+                        `<button onclick="confirmarPresenca('${item.paciente}')" class="bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all shadow-lg active:scale-95">Confirmar Presença</button>` : '';
 
-                    // LÓGICA CORRIGIDA: 
-                    // Se for o primeiro E o nome dele não estiver na memória de "confirmado"
-                    if (index === 0 && pacienteConfirmadoAtual !== item.paciente) {
-                        statusUI = `
-                            <div class="flex items-center gap-2">
-                                <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                                <span class="text-xs font-black text-white">CHAMANDO AGORA...</span>
-                            </div>`;
-                        acaoUI = `<button onclick="confirmarPresenca('${item.paciente}')" class="bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all active:scale-90">Confirmar Presença</button>`;
-                    } else {
-                        // Status mudado para "EM ATENDIMENTO"
-                        statusUI = `
-                            <div class="flex items-center gap-2">
-                                <div class="w-2 h-2 bg-indigo-300/40 rounded-full"></div>
-                                <span class="text-xs font-black text-indigo-200 uppercase">Em Atendimento</span>
-                            </div>`;
-                    }
-
-                    htmlGerado += `
+                    htmlAtendimentos += `
                         <div class="bg-indigo-600 p-8 rounded-[3rem] shadow-2xl border-b-[10px] border-indigo-900 flex flex-col justify-between min-h-[250px] animate-scale">
                             <div class="flex justify-between items-start">
                                 <span class="bg-white/20 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-wider">${item.especialista}</span>
-                                <span class="text-indigo-200 font-black italic">${item.sala}</span>
+                                <span class="text-indigo-200 font-black italic tracking-tighter">${item.sala}</span>
                             </div>
                             <h3 class="text-5xl font-black tracking-tighter truncate mt-4">${item.paciente}</h3>
                             <div class="mt-6 pt-4 border-t border-white/10 flex justify-between items-center">
@@ -170,53 +143,73 @@ function atualizarPainel() {
                         </div>`;
                 });
 
-                if (data.length === 0) { /* ... manter aviso de aguardando ... */ }
-            }
+                // Renderização da Fila Direita (Garantindo que os nomes apareçam)
+                let htmlEspera = '';
+                const listaEspera = data.espera || [];
+                if (listaEspera.length > 0) {
+                    htmlEspera = `<div class="flex flex-col gap-3 w-full">`;
+                    listaEspera.forEach(item => {
+                        htmlEspera += `
+                            <div class="flex items-center justify-between p-4 bg-slate-900/80 rounded-2xl border-l-4 border-indigo-500 animate-scale shadow-md w-full">
+                                <div class="min-w-0 text-left flex-1">
+                                    <p class="text-lg font-black truncate text-slate-100 uppercase leading-tight">${item.paciente}</p>
+                                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest">${item.servico}</p>
+                                </div>
+                                <div class="text-right ml-4">
+                                    <p class="text-xl font-black text-indigo-500 tabular-nums">${item.horario}</p>
+                                </div>
+                            </div>`;
+                    });
+                    htmlEspera += `</div>`;
+                } else {
+                    htmlEspera = `<div class="h-64 flex items-center justify-center opacity-20"><p class="font-black uppercase text-slate-500">Fila Vazia</p></div>`;
+                }
 
-            container.innerHTML = htmlGerado;
-            listaAnterior = data.map(item => item.paciente);
-        });
-}
+                containerCards.innerHTML = htmlAtendimentos || '<p class="opacity-20 uppercase font-black">Nenhum Atendimento</p>';
+                containerEspera.innerHTML = htmlEspera;
+                
+                // Atualiza a memória para saber quem foi o último chamado
+                listaAnterior = listaAtendimentos.map(item => item.paciente);
+            })
+            .catch(err => console.error("Erro na API:", err));
+    }
 
-// Nova função de clique para garantir a persistência do nome
-function confirmarPresenca(nomePaciente) {
-    pacienteConfirmadoAtual = nomePaciente; // Salva que ESTE paciente foi confirmado
-    pararChamadaManual(false); // Para o som
-    atualizarPainel(); // Redesenha a tela imediatamente com o novo status
-}
-
-    window.onload = () => {
-        window.speechSynthesis.getVoices();
-        setInterval(() => {
-            document.getElementById('clock').textContent = new Date().toLocaleTimeString('pt-BR');
-        }, 1000);
-        setInterval(atualizarPainel, 5000); // Sincroniza a cada 5 segundos
-        atualizarPainel();
-
-        const starter = document.createElement('div');
-        starter.id = 'starter-overlay';
-        starter.innerHTML = `
-            <div onclick="liberarPainel(this)" style="position:fixed; inset:0; background:#020617; z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
-                <div style="background:#6366f1; width:120px; height:120px; border-radius:100%; display:flex; align-items:center; justify-content:center; margin-bottom:24px; box-shadow:0 0 50px rgba(99,102,241,0.4);">
-                    <svg style="width:50px; fill:white" viewBox="0 0 24 24"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16.03C15.5,15.29 16.5,13.77 16.5,12M3,9V15H7L12,20V4L7,9H3Z" /></svg>
-                </div>
-                <h2 style="color:white; font-size:24px; font-weight:900; letter-spacing:2px;">ATIVAR PAINEL SMART</h2>
-                <p style="color:#475569; margin-top:10px; font-weight:bold; font-size:12px; letter-spacing:4px;">CLIQUE PARA INICIAR ÁUDIO</p>
-            </div>`;
-        document.body.appendChild(starter);
-    };
-
+    // Inicialização obrigatória para o áudio funcionar
     function liberarPainel(el) {
         audioLiberado = true;
         el.remove();
-        window.speechSynthesis.speak(new SpeechSynthesisUtterance("")); 
+        // Som de teste mudo para "acordar" o navegador
+        const wakeUp = new SpeechSynthesisUtterance("");
+        window.speechSynthesis.speak(wakeUp);
         atualizarPainel();
     }
+
+    window.onload = () => {
+        setInterval(() => {
+            document.getElementById('clock').textContent = new Date().toLocaleTimeString('pt-BR');
+        }, 1000);
+        setInterval(atualizarPainel, 5000);
+        atualizarPainel();
+
+        // Overlay de inicialização (Clique aqui é obrigatório para ter som)
+        const starter = document.createElement('div');
+        starter.innerHTML = `
+            <div onclick="liberarPainel(this)" style="position:fixed; inset:0; background:#020617; z-index:99999; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;">
+                <div style="background:#6366f1; width:120px; height:120px; border-radius:100%; display:flex; align-items:center; justify-content:center; margin-bottom:24px;">
+                    <svg style="width:50px; fill:white" viewBox="0 0 24 24"><path d="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18,19.86 21,16.28 21,12C21,7.72 18,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16.03C15.5,15.29 16.5,13.77 16.5,12M3,9V15H7L12,20V4L7,9H3Z" /></svg>
+                </div>
+                <h2 style="color:white; font-family:sans-serif; font-weight:900;">CLIQUE PARA ATIVAR O SOM</h2>
+            </div>`;
+        document.body.appendChild(starter);
+    };
 </script>
 
 <style>
+    /* Scrollbar Minimalista */
     .custom-scrollbar::-webkit-scrollbar { width: 5px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+    
+    /* Animação de Entrada */
     .animate-scale { animation: scaleIn 0.3s ease-out forwards; }
     @keyframes scaleIn {
         from { opacity: 0; transform: scale(0.95); }

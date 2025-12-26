@@ -1,55 +1,75 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="min-h-[80vh] flex flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8">
-        <div class="bg-white/80 backdrop-blur-2xl rounded-[3rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] border border-white/60 overflow-hidden">
+<div class="min-h-[85vh] flex flex-col items-center justify-center py-12 px-4 relative overflow-hidden">
+    
+    <div class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-100/40 rounded-full blur-3xl -z-10"></div>
+    <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl -z-10"></div>
+
+    <div class="max-w-md w-full space-y-8 relative">
+        <div class="bg-white/70 backdrop-blur-3xl rounded-[3.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.08)] border border-white overflow-hidden transition-all duration-500 hover:shadow-indigo-100/30">
             
-            <div class="bg-slate-900 px-8 py-10 text-center relative overflow-hidden">
-                <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-500 rounded-full opacity-20 blur-2xl"></div>
-                <h2 class="text-3xl font-black text-white tracking-tighter">
-                    Crie sua <span class="text-indigo-400 italic font-serif">jornada.</span>
+            <div class="bg-slate-900 px-10 py-12 text-center relative">
+                <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-primary opacity-10 blur-2xl"></div>
+                <h2 class="text-3xl font-extrabold text-white tracking-tighter">
+                    Crie sua <span class="text-primary italic font-serif">jornada.</span>
                 </h2>
-                <p class="mt-2 text-slate-400 font-medium text-sm">Junte-se a nós para uma experiência personalizada.</p>
+                <p class="mt-3 text-slate-400 font-medium text-xs leading-relaxed">
+                    Registe-se em poucos segundos e tenha acesso <br> a um atendimento exclusivo e personalizado.
+                </p>
             </div>
 
-            <div class="p-8 md:p-10">
-                <form class="space-y-5" method="POST">
+            <div class="p-10 md:p-12">
+                <form class="space-y-6" method="POST">
                     {{ form.hidden_tag() }}
                     
-                    <div class="space-y-1">
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Nome Completo</label>
-                        {{ form.name(class="block w-full px-6 py-4 bg-slate-50 border-2 border-transparent rounded-2xl text-slate-900 font-bold focus:bg-white focus:border-indigo-100 focus:ring-4 focus:ring-indigo-50/50 transition-all outline-none", placeholder="Como quer ser chamado?") }}
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Como devemos chamar-lhe?</label>
+                        <div class="relative group">
+                            {{ form.name(class="block w-full px-8 py-4 bg-slate-50 border-2 border-transparent rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-100 focus:ring-8 focus:ring-indigo-50/40 transition-all outline-none", placeholder="Nome completo") }}
+                        </div>
                         {% for error in form.name.errors %}
-                            <p class="text-[10px] text-red-500 font-bold mt-1 ml-2">{{ error }}</p>
+                            <p class="text-[10px] text-rose-500 font-black mt-1 ml-2 animate-pulse">{{ error }}</p>
                         {% endfor %}
                     </div>
 
-                    <div class="space-y-1">
-                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">E-mail</label>
-                        {{ form.email(class="block w-full px-6 py-4 bg-slate-50 border-2 border-transparent rounded-2xl text-slate-900 font-bold focus:bg-white focus:border-indigo-100 focus:ring-4 focus:ring-indigo-50/50 transition-all outline-none", placeholder="seu@email.com") }}
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">E-mail de Contacto</label>
+                        <div class="relative group">
+                            {{ form.email(class="block w-full px-8 py-4 bg-slate-50 border-2 border-transparent rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-100 focus:ring-8 focus:ring-indigo-50/40 transition-all outline-none", placeholder="seu@email.com") }}
+                        </div>
                         {% for error in form.email.errors %}
-                            <p class="text-[10px] text-red-500 font-bold mt-1 ml-2">{{ error }}</p>
+                            <p class="text-[10px] text-rose-500 font-black mt-1 ml-2">{{ error }}</p>
                         {% endfor %}
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Senha</label>
-                            {{ form.password(class="block w-full px-6 py-4 bg-slate-50 border-2 border-transparent rounded-2xl text-slate-900 font-bold focus:bg-white focus:border-indigo-100 focus:ring-4 focus:ring-indigo-50/50 transition-all outline-none", placeholder="••••••") }}
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Senha</label>
+                            {{ form.password(class="block w-full px-8 py-4 bg-slate-50 border-2 border-transparent rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-100 focus:ring-8 focus:ring-indigo-50/40 transition-all outline-none", placeholder="••••••") }}
                         </div>
-                        <div class="space-y-1">
-                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest ml-2">Confirmar</label>
-                            {{ form.confirm_password(class="block w-full px-6 py-4 bg-slate-50 border-2 border-transparent rounded-2xl text-slate-900 font-bold focus:bg-white focus:border-indigo-100 focus:ring-4 focus:ring-indigo-50/50 transition-all outline-none", placeholder="••••••") }}
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Confirmar</label>
+                            {{ form.confirm_password(class="block w-full px-8 py-4 bg-slate-50 border-2 border-transparent rounded-[1.5rem] text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-100 focus:ring-8 focus:ring-indigo-50/40 transition-all outline-none", placeholder="••••••") }}
                         </div>
                     </div>
-                    {% for error in form.password.errors or form.confirm_password.errors %}
-                        <p class="text-[10px] text-red-500 font-bold ml-2">{{ error }}</p>
-                    {% endfor %}
+                    
+                    {% set pwd_errors = form.password.errors or form.confirm_password.errors %}
+                    {% if pwd_errors %}
+                        <div class="bg-rose-50 p-3 rounded-xl border border-rose-100">
+                            {% for error in pwd_errors %}
+                                <p class="text-[10px] text-rose-600 font-bold ml-1 flex items-center gap-2">
+                                    <span class="w-1 h-1 bg-rose-400 rounded-full"></span>
+                                    {{ error }}
+                                </p>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
 
                     <div class="pt-4">
-                        <button type="submit" class="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl hover:bg-slate-900 shadow-xl shadow-indigo-100 hover:shadow-slate-200 transition-all transform hover:-translate-y-1 active:scale-95 uppercase tracking-widest text-xs">
-                            Finalizar Cadastro
+                        <button type="submit" class="group/btn w-full bg-primary text-white font-black py-5 rounded-[1.8rem] hover:bg-slate-900 shadow-xl shadow-indigo-100 hover:shadow-slate-200 transition-all duration-300 transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]">
+                            Criar minha conta
+                            <svg class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
                         </button>
                     </div>
                 </form>
@@ -57,9 +77,9 @@
         </div>
 
         <p class="text-center text-slate-400 font-bold text-sm">
-            Já possui conta? 
-            <a href="{{ url_for('auth.login') }}" class="text-slate-900 hover:text-indigo-600 transition-colors font-black border-b-2 border-slate-200 hover:border-indigo-200 pb-0.5 ml-1">
-                Faça login
+            Já faz parte da nossa comunidade? 
+            <a href="{{ url_for('auth.login') }}" class="text-slate-900 hover:text-primary transition-all font-black border-b-2 border-slate-200 hover:border-primary pb-0.5 ml-1">
+                Faça login aqui
             </a>
         </p>
     </div>

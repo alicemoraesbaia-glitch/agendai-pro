@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Meu Perfil | Smart Agenda{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto py-10 px-4 animate-in fade-in slide-in-from-bottom-8 duration-700">
+    
+    <div class="mb-10 px-2">
+        <span class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-2 block">Área do Paciente</span>
+        <h1 class="text-4xl font-black text-slate-900 tracking-tighter italic">Olá, <span class="text-indigo-600">{{ (user.name.split(' ')[0]) if user.name else 'Usuário' }}</span></h1>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-white rounded-[3rem] p-8 md:p-10 border border-slate-100 shadow-2xl shadow-slate-200/50 relative overflow-hidden">
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-10">
+                        <h2 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Meus Dados Cadastrais</h2>
+                        <a href="{{ url_for('main.edit_my_profile') }}" class="text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-slate-900 transition-colors">
+                            Editar Informações
+                        </a>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <label class="text-[9px] font-black text-indigo-500 uppercase tracking-widest block mb-1">Nome Completo</label>
+                            <p class="text-slate-900 font-bold text-lg tracking-tight">{{ user.name or 'Não informado' }}</p>
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-black text-indigo-500 uppercase tracking-widest block mb-1">E-mail</label>
+                            <p class="text-slate-900 font-bold text-lg tracking-tight">{{ user.email }}</p>
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-black text-indigo-500 uppercase tracking-widest block mb-1">CPF</label>
+                            <p class="text-slate-700 font-medium tracking-tight">
+                                {{ user.patient_profile.cpf if user.patient_profile and user.patient_profile.cpf else 'Não informado' }}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="text-[9px] font-black text-indigo-500 uppercase tracking-widest block mb-1">Plano de Saúde</label>
+                            <p class="text-slate-700 font-medium tracking-tight">
+                                {{ user.patient_profile.insurance_plan if user.patient_profile and user.patient_profile.insurance_plan else 'Particular' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="space-y-6">
+            <div class="bg-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
+                <div class="relative z-10">
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-6">Próxima Consulta</h3>
+                    <p class="text-slate-400 text-xs font-bold mb-8 italic">Gerencie seus horários.</p>
+                    <a href="{{ url_for('main.index') }}" class="block w-full bg-white text-slate-900 text-center py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-500 hover:text-white transition-all shadow-xl">
+                        Novo Agendamento
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -119,14 +119,15 @@ def book_service(service_id):
 
     # --- GERAÇÃO DE SLOTS (Visualização) ---
     slots = []
+    # Dentro da função book_service, onde os slots são gerados:
     for h in working_hours:
         slot_time_obj = datetime.strptime(h, '%H:%M').time()
         slot_start = datetime.combine(selected_date, slot_time_obj)
         slot_end = slot_start + timedelta(minutes=service.duration_minutes)
         
+        # Agora a função check_resource_conflict já ignora os 'completed'
         is_resource_free = not Appointment.check_resource_conflict(service.id, slot_start, slot_end)
         
-        # AJUSTE SÊNIOR: Se for Admin, 'is_future' é sempre True (permite testar/lançar retroativo)
         if current_user.is_admin:
             is_future = True
         else:
@@ -144,14 +145,14 @@ def limpar_agendamentos_expirados():
     """ Cancela agendamentos pendentes com mais de 15 minutos de criação """
     limite = datetime.now() - timedelta(minutes=15)
     
-    # Sênior: Usamos synchronize_session=False para performance em updates em massa
+    # Note que filtramos APENAS 'pending'. 
+    # 'confirmed', 'in_progress' e 'completed' estão seguros aqui.
     Appointment.query.filter(
         Appointment.status == 'pending',
         Appointment.created_at <= limite
     ).update({Appointment.status: 'cancelled'}, synchronize_session=False)
     
     db.session.commit()
-
 
 
 # --- ROTA: MEUS AGENDAMENTOS ---
@@ -250,3 +251,73 @@ def delete_service(id):
     # 3. CORREÇÃO DO REDIRECT (Adaptado à sua função existente na linha 178)
     # Como a função se chama 'list_services', o endpoint é 'main.list_services'
     return redirect(url_for('main.list_services'))
+
+
+# --- ROTA: CONCLUIR ATENDIMENTO (Adicione esta) ---
+@main_bp.route('/complete-appointment/<int:appt_id>', methods=['POST'])
+@login_required
+def complete_appointment(appt_id):
+    # Apenas admin ou o próprio dono do recurso (se você implementar essa lógica)
+    if not current_user.is_admin:
+        abort(403)
+        
+    appt = Appointment.query.get_or_404(appt_id)
+    
+    # Muda o status para completed (o HTML que ajustamos vai ler isso)
+    appt.status = 'completed'
+    db.session.commit()
+    
+    flash(f'Atendimento de {appt.user.name} concluído com sucesso!', 'success')
+    return redirect(request.referrer or url_for('admin.dashboard_ocupacao'))
+
+
+from flask import render_template, redirect, url_for, flash
+from flask_login import login_required, current_user
+# ... outros imports ...
+
+# Arquivo: app/main/routes.py
+
+@main_bp.route('/meu-perfil')
+@login_required
+def my_profile():
+    # O current_user é fornecido pelo Flask-Login e contém os dados do usuário atual.
+    # O template 'my_profile.html' usará a variável 'user' para exibir as informações.
+    try:
+        return render_template('main/my_profile.html', user=current_user)
+    except Exception as e:
+        print(f"Erro ao carregar perfil: {e}")
+        flash("Ocorreu um erro ao carregar os dados do perfil.", "danger")
+        return redirect(url_for('main.index'))
+    
+    
+
+@main_bp.route('/perfil/editar', methods=['GET', 'POST'])
+@login_required
+def edit_my_profile():
+    if request.method == 'POST':
+        # 1. Atualiza o nome (que fica na tabela User)
+        current_user.name = request.form.get('name')
+        
+        # 2. VERIFICAÇÃO CRUCIAL: Se não existe perfil, cria um novo
+        if current_user.patient_profile is None:
+            from app.models import PatientProfile # Import local para evitar erro
+            new_profile = PatientProfile(user_id=current_user.id)
+            db.session.add(new_profile)
+            # Associamos manualmente para o Python reconhecer o objeto imediatamente
+            current_user.patient_profile = new_profile 
+
+        # 3. Agora que garantimos que o perfil existe, salvamos os dados
+        current_user.patient_profile.cpf = request.form.get('cpf')
+        current_user.patient_profile.insurance_plan = request.form.get('insurance_plan')
+        current_user.patient_profile.medical_notes = request.form.get('medical_notes')
+        
+        try:
+            db.session.commit()
+            flash('Perfil atualizado com sucesso!', 'success')
+            return redirect(url_for('main.my_profile'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Erro ao salvar os dados.', 'danger')
+            print(f"Erro no banco: {e}")
+
+    return render_template('main/edit_profile.html', user=current_user)
