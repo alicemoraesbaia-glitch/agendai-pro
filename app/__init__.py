@@ -28,12 +28,11 @@ def create_app(config_class=Config):
     # Registro de Blueprints (Importação local para evitar import circular)
     from app.auth.routes import auth_bp
     from app.main.routes import main_bp
-    from app.admin.routes import admin_bp # Verifique se admin_bp está definido em app/admin/routes.py
-    
-    app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(main_bp)
+    from app.admin.routes import admin_bp #
     
     # Aqui definimos o prefixo apenas UMA vez
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
     # CLI commands

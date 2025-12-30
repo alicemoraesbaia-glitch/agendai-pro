@@ -10,11 +10,6 @@ from functools import wraps
 from flask import Blueprint, render_template
 
 
-# ... outras importações ...
-
-# Esta linha deve existir antes de usar @admin.route
-admin = Blueprint('admin', __name__)
-
 # --- DECORADOR DE SEGURANÇA (O PORTEIRO) ---
 def admin_required(f):
     @wraps(f)
@@ -472,6 +467,17 @@ def new_resource():
     # Importante: Passar resource=None explicitamente
     return render_template('admin/resource_form.html', resource=None)
 
+
+
+@admin_bp.route('/resources')
+@login_required
+@admin_required
+def list_resources():
+    resources = Resource.query.all()
+    return render_template('admin/resources_list.html', resources=resources)
+
+
+
 @admin_bp.route('/resource/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
@@ -489,17 +495,6 @@ def edit_resource(id):
             db.session.rollback()
             flash('Erro ao atualizar os dados.', 'danger')
             
-    return render_template('admin/resource_form.html', resource=resource)
-    
-    
-# Adicione ao final do seu arquivo de rotas admin
-@admin_bp.route('/resources')
-@login_required
-@admin_required
-def list_resources():
-    # Lista todos os médicos/salas cadastrados
-    resources = Resource.query.all()
-    return render_template('admin/resources_list.html', resources=resources)
     return render_template('admin/resource_form.html', resource=resource)
 
 
@@ -594,13 +589,3 @@ def testar_chamada_agora():
     
     return f"Sucesso! O paciente {user.name} foi inserido como 'Em Atendimento'. Olhe para a TV agora!"
 
-
-@admin.route('/usuario/<int:id>')
-@login_required
-def view_profile(id):
-    # Verifica se o usuário logado é admin
-    if not current_user.is_admin:
-        abort(403)
-        
-    user = User.query.get_or_404(id)
-    return render_template('admin/user_profile.html', user=user)
