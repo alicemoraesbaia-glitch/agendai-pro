@@ -4,12 +4,12 @@
 <section class="relative pt-16 pb-20 overflow-hidden">
     <div class="text-center relative z-10 space-y-8">
         <div class="animate-fade-in">
-            <span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-[0.2em] bg-indigo-50 text-primary border border-indigo-100/50 mb-4">
+            <span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-[0.2em] bg-indigo-50 text-indigo-600 border border-indigo-100/50 mb-4">
                 🚀 Gestão Inteligente 2025
             </span>
             <h1 class="text-4xl md:text-7xl font-extrabold text-slate-900 tracking-tighter leading-[1.1]">
                 Sua saúde, <br class="hidden md:block"> 
-                sua agenda. <span class="text-primary italic">Simplificada.</span>
+                sua agenda. <span class="text-indigo-600 italic">Simplificada.</span>
             </h1>
             <p class="text-slate-500 mt-6 text-lg font-medium max-w-xl mx-auto">
                 Agende consultas e exames com os melhores especialistas em poucos cliques.
@@ -18,13 +18,13 @@
 
         <div class="max-w-2xl mx-auto px-4 mt-10"> 
             <form action="{{ url_for('main.index') }}" method="GET" class="relative group">
-                <div class="absolute inset-0 bg-primary/20 blur-2xl group-focus-within:opacity-100 opacity-0 transition-opacity duration-500"></div>
+                <div class="absolute inset-0 bg-indigo-600/20 blur-2xl group-focus-within:opacity-100 opacity-0 transition-opacity duration-500"></div>
                 <div class="relative flex items-center">
                     <input type="text" name="q" value="{{ search_query or '' }}" 
                         placeholder="O que você busca hoje? (Ex: Cardiologista)" 
-                        class="w-full bg-white/80 backdrop-blur-xl border border-slate-200 py-5 pl-8 pr-32 rounded-[2rem] text-sm font-bold text-slate-700 focus:ring-4 focus:ring-primary/10 focus:border-primary shadow-2xl transition-all outline-none">
+                        class="w-full bg-white/80 backdrop-blur-xl border border-slate-200 py-5 pl-8 pr-32 rounded-[2rem] text-sm font-bold text-slate-700 focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 shadow-2xl transition-all outline-none">
                     
-                    <button type="submit" class="absolute right-2 bg-slate-900 hover:bg-primary text-white px-8 py-3.5 rounded-[1.6rem] font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg">
+                    <button type="submit" class="absolute right-2 bg-slate-900 hover:bg-indigo-600 text-white px-8 py-3.5 rounded-[1.6rem] font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg">
                         Buscar
                     </button>
                 </div>
@@ -37,15 +37,15 @@
     <div class="flex items-center justify-start gap-3 overflow-x-auto pb-6 no-scrollbar">
         <a href="{{ url_for('main.index') }}" 
            class="whitespace-nowrap px-6 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all
-           {{ 'bg-slate-900 text-white shadow-xl shadow-slate-200' if not active_category or active_category == 'Todos' else 'bg-white border border-slate-100 text-slate-400 hover:border-primary/30 hover:text-primary' }}">
-           Todos os Serviços
+           {{ 'bg-slate-900 text-white shadow-xl shadow-slate-200' if not active_category or active_category == 'Todos' else 'bg-white border border-slate-100 text-slate-400 hover:border-indigo-600/30 hover:text-indigo-600' }}">
+            Todos os Serviços
         </a>
 
         {% for cat in categories %}
         <a href="{{ url_for('main.index', category=cat) }}" 
            class="whitespace-nowrap px-6 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all
-           {{ 'bg-slate-900 text-white shadow-xl' if active_category == cat else 'bg-white border border-slate-100 text-slate-400 hover:border-primary/30 hover:text-primary' }}">
-           {{ cat }}
+           {{ 'bg-slate-900 text-white shadow-xl' if active_category == cat else 'bg-white border border-slate-100 text-slate-400 hover:border-indigo-600/30 hover:text-indigo-600' }}">
+            {{ cat }}
         </a>
         {% endfor %}
     </div>
@@ -53,6 +53,7 @@
 
 <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-32">
     {% for s in services %}
+    
     <div class="group relative bg-white/60 backdrop-blur-md rounded-[2.5rem] border border-white/40 p-4 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 flex flex-col h-full">
         
         {% if loop.index == 1 and not active_category and not search_query %}
@@ -66,7 +67,7 @@
             <img src="{{ url_for('static', filename=img_path) }}" 
                  alt="{{ s.name }}"
                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
-                 onerror="this.src='https://images.unsplash.com/photo-1505751172107-573957a2436d?q=80&w=800&auto=format&fit=crop';">
+                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1505751172107-573957a2436d?q=80&w=800&auto=format&fit=crop';">
             
             <div class="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
             
@@ -76,7 +77,7 @@
         </div>
 
         <div class="px-2 flex flex-col flex-grow">
-            <h3 class="text-xl font-bold text-slate-800 tracking-tight group-hover:text-primary transition-colors line-clamp-1">
+            <h3 class="text-xl font-bold text-slate-800 tracking-tight group-hover:text-indigo-600 transition-colors line-clamp-1">
                 {{ s.name }}
             </h3>
             <p class="text-slate-500 text-sm font-medium mt-3 line-clamp-2 leading-relaxed h-10">
@@ -87,27 +88,25 @@
                 <div class="flex flex-col">
                     <span class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Valor da Sessão</span>
                     <span class="text-2xl font-black text-slate-900 tracking-tighter">
-                        <span class="text-sm font-bold text-primary">R$</span> {{ "%.2f"|format(s.price_cents / 100) }}
+                        <span class="text-sm font-bold text-indigo-600">R$</span> {{ "%.2f"|format(s.price_cents / 100) }}
                     </span>
                 </div>
                 
                 <a href="{{ url_for('main.service_detail', service_id=s.id) }}" 
-                   class="bg-primary text-white p-4 rounded-2xl hover:bg-slate-900 transition-all active:scale-90 shadow-xl shadow-primary/20 flex items-center justify-center">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/>
-                    </svg>
+                   class="bg-indigo-600 text-white p-4 rounded-2xl hover:bg-slate-900 transition-all active:scale-90 shadow-xl shadow-indigo-600/20 flex items-center justify-center">
+                    <i class="fas fa-plus"></i>
                 </a>
             </div>
         </div>
     </div>
     {% else %}
     <div class="col-span-full py-32 text-center bg-white/40 backdrop-blur-md rounded-[3rem] border-2 border-dashed border-slate-200">
-        <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+            <i class="fas fa-search-minus text-3xl"></i>
         </div>
         <h3 class="text-xl font-bold text-slate-800">Nenhum serviço encontrado</h3>
         <p class="text-slate-500 mt-2 font-medium">Tente ajustar seus filtros ou termos de busca.</p>
-        <a href="{{ url_for('main.index') }}" class="text-primary font-black text-xs uppercase mt-6 inline-block border-b-2 border-primary pb-1 hover:text-slate-900 hover:border-slate-900 transition-all">Resetar Busca</a>
+        <a href="{{ url_for('main.index') }}" class="text-indigo-600 font-black text-xs uppercase mt-6 inline-block border-b-2 border-indigo-600 pb-1 hover:text-slate-900 hover:border-slate-900 transition-all">Resetar Busca</a>
     </div>
     {% endfor %}
 </div>

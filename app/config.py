@@ -1,44 +1,56 @@
 import os
 from dotenv import load_dotenv
 
-# Carrega as variáveis do arquivo .env
 load_dotenv()
 
 class Config:
-    # --- Chave de Segurança ---
+    """Configurações Base - Comum a todos os ambientes"""
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-123'
-    
-    # --- Banco de Dados ---
-    # Garante que o SQLAlchemy não use 'postgres://' (antigo) em vez de 'postgresql://' se mudar de banco
-    uri = os.environ.get('DATABASE_URL') or 'sqlite:///smart_agenda.db'
-    if uri.startswith("postgres://"):
-        uri = uri.replace("postgres://", "postgresql://", 1)
-    SQLALCHEMY_DATABASE_URI = uri
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
-    # --- Localização ---
     TIMEZONE = os.environ.get('TIMEZONE') or 'America/Sao_Paulo'
     
-    # --- Configurações de Email (SMTP) ---
+    # Configurações de Email
     MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
     MAIL_PORT = int(os.environ.get('MAIL_PORT') or 587)
-    
-    # Converte 'true' do .env para o booleano True do Python
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']
-    
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    
-    # Importante: O Gmail exige que o SENDER seja o próprio e-mail da conta
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_USERNAME')
-    MAIL_DEBUG = True  # Adicione esta linha
 
-    # --- Segurança de Sessão ---
-    # Mudança: Usamos FLASK_DEBUG para facilitar o desenvolvimento local
-    DEBUG = os.environ.get('FLASK_DEBUG') == '1'
+class DevelopmentConfig(Config):
+    """Configuração para o seu PC (Localhost)"""
+    DEBUG = True
+    # Usa SQLite local por padrão
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or 'sqlite:///smart_agenda.db'
+    SESSION_COOKIE_SECURE = False
+    REMEMBER_COOKIE_SECURE = False
+
+class TestingConfig(Config):
+    """Configuração para a Seção 14.3 (Pytest)"""
+    TESTING = True
+    # Banco em memória para ser rápido e não sujar seu app.db
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+
+class ProductionConfig(Config):
+    """Configuração para o Servidor na Nuvem (PostgreSQL)"""
+    DEBUG = False
     
-    # Se estiver em DEBUG (desenvolvimento), não exige HTTPS. Se estiver em produção, exige.
-    SESSION_COOKIE_SECURE = not DEBUG
-    REMEMBER_COOKIE_SECURE = not DEBUG
+    # Lógica sênior para o PostgreSQL
+    uri = os.environ.get('DATABASE_URL')
+    if uri and uri.startswith("postgres://"):
+        uri = uri.replace("postgres://", "postgresql://", 1)
+    SQLALCHEMY_DATABASE_URI = uri
+    
+    # Segurança Máxima em Produção
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_HTTPONLY = True
+
+# Dicionário para facilitar a seleção no __init__.py ou create_app()
+config_dict = {
+    'development': DevelopmentConfig,
+    'production': ProductionConfig,
+    'testing': TestingConfig,
+    'default': DevelopmentConfig
+}

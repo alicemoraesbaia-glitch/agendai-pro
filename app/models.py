@@ -13,7 +13,6 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     
-    # --- EVOLUÇÃO SÊNIOR ---
     # Mantemos is_admin para compatibilidade com seus decorators atuais
     is_admin = db.Column(db.Boolean, default=False)
     
@@ -36,9 +35,7 @@ class User(UserMixin, db.Model):
     appointments = db.relationship('Appointment', back_populates='user', lazy=True)
 
     # --- MÉTODOS DE SEGURANÇA ---
-    
     def increase_failed_attempts(self):
-        # A lógica defensiva que você criou é excelente.
         # Adicionei apenas o commit implícito se necessário na rota, 
         # mas aqui garantimos a integridade do dado.
         self.failed_login_attempts = (self.failed_login_attempts or 0) + 1
@@ -193,7 +190,7 @@ class Appointment(db.Model):
         imediatamente após a conclusão do atendimento.
         """
         from app.models import Service, Appointment
-        service = Service.query.get(service_id)
+        service = db.session.get(Service, service_id)
         if not service:
             return False
 

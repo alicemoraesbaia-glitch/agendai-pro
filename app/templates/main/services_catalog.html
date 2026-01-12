@@ -1,26 +1,26 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto space-y-10 animate-fade-in px-4">
     
     <section class="relative py-8 border-b border-slate-100">
         <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-            <div class="space-y-4">
-                <div class="inline-flex items-center px-4 py-1.5 bg-indigo-50 rounded-full text-primary text-[10px] font-black uppercase tracking-[0.2em] border border-indigo-100/50">
+            <div class="space-y-4 text-left">
+                <div class="inline-flex items-center px-4 py-1.5 bg-indigo-50 rounded-full text-indigo-600 text-[10px] font-black uppercase tracking-[0.2em] border border-indigo-100/50">
                     ✨ Especialidades Exclusivas
                 </div>
                 <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-slate-900 leading-none">
-                    Nossos <span class="text-primary italic font-serif">serviços.</span>
+                    Nossos <span class="text-indigo-600 italic font-serif">serviços.</span>
                 </h1>
             </div>
 
-            <div class="flex items-center gap-3 overflow-x-auto pb-4 lg:pb-0 scrollbar-hide">
+            <div class="flex items-center gap-3 overflow-x-auto pb-4 lg:pb-0 no-scrollbar">
                 <button class="filter-btn flex-shrink-0 bg-slate-900 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl shadow-slate-200" 
                         data-category="all">
                     Todos
                 </button>
                 {% for category in categories %}
-                <button class="filter-btn flex-shrink-0 bg-white border border-slate-200 text-slate-500 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all shadow-sm"
+                <button class="filter-btn flex-shrink-0 bg-white border border-slate-200 text-slate-500 px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm"
                         data-category="{{ category }}">
                     {{ category }}
                 </button>
@@ -33,67 +33,62 @@
         <div id="service-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             
             {% for service in services %}
-            <div class="service-card group bg-white rounded-[2.5rem] p-4 border border-slate-100 shadow-sm hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 relative flex flex-col h-full"
+            <div class="service-card group bg-white/70 backdrop-blur-md rounded-[2.5rem] p-4 border border-slate-100 shadow-sm hover:shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 relative flex flex-col h-full"
                  data-category="{{ service.category }}">
                 
                 {% if current_user.is_authenticated and current_user.is_admin %}
                 <div class="absolute top-6 right-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <form action="{{ url_for('main.delete_service', id=service.id) }}" method="POST" 
-                          onsubmit="return confirm('Confirmar exclusão de: {{ service.name }}?')">
+                          onsubmit="return confirm('Confirmar exclusão permanente de: {{ service.name }}?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="p-3 bg-white text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-2xl border border-red-50">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
+                            <i class="fas fa-trash-can"></i>
                         </button>
                     </form>
                 </div>
                 {% endif %}
 
                 <a href="{{ url_for('main.service_detail', service_id=service.id) }}" 
-                   class="relative h-64 w-full rounded-[2rem] overflow-hidden mb-6 bg-slate-50 block">
+                   class="relative h-64 w-full rounded-[2rem] overflow-hidden mb-6 bg-slate-100 block">
                     
-                    <img src="{{ url_for('static', filename='assets/img/services/' + service.image_url) if service.image_url else 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=800&auto=format&fit=crop' }}" 
+                    {% set img_path = 'assets/img/services/' + service.image_url if service.image_url else 'assets/img/services/default.png' %}
+                    <img src="{{ url_for('static', filename=img_path) }}" 
                          alt="{{ service.name }}"
                          class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
-                         onerror="this.src='https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=800&auto=format&fit=crop'">
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?q=80&w=800&auto=format&fit=crop'">
                     
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                     
                     <div class="absolute top-5 left-5">
-                        <span class="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-xl shadow-lg text-[9px] font-black text-primary uppercase tracking-[0.15em]">
-                            {{ service.category }}
+                        <span class="bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-xl shadow-lg text-[9px] font-black text-indigo-600 uppercase tracking-[0.15em] border border-white/20">
+                            {{ service.category or 'Geral' }}
                         </span>
                     </div>
                 </a>
                 
-                <div class="px-3 flex-grow flex flex-col">
-                    <h3 class="text-2xl font-extrabold text-slate-900 tracking-tighter leading-tight group-hover:text-primary transition-colors mb-3">
+                <div class="px-3 flex-grow flex flex-col text-left">
+                    <h3 class="text-2xl font-extrabold text-slate-900 tracking-tighter leading-tight group-hover:text-indigo-600 transition-colors mb-3">
                         {{ service.name }}
                     </h3>
                     
                     <div class="flex items-center gap-4 mb-6">
                         <div class="flex items-center text-[10px] font-black text-slate-400">
-                            <svg class="w-4 h-4 mr-1.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
+                            <i class="far fa-clock mr-1.5 text-indigo-600"></i>
                             {{ service.duration_minutes }} MIN
                         </div>
                     </div>
 
                     <div class="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
-                        <div class="flex flex-col">
+                        <div class="flex flex-col text-left">
                             <span class="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Investimento</span>
                             <span class="text-xl font-black text-slate-900">
-                                R$ {{ "%.2f"|format(service.price_cents / 100) }}
+                                <span class="text-sm font-bold text-indigo-600">R$</span> {{ "%.2f"|format(service.price_cents / 100) }}
                             </span>
                         </div>
                         
                         <a href="{{ url_for('main.service_detail', service_id=service.id) }}" 
-                           class="inline-flex items-center justify-center w-12 h-12 bg-slate-900 text-white rounded-2xl hover:bg-primary transition-all shadow-lg active:scale-90 group/btn">
-                            <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
-                            </svg>
+                           class="inline-flex items-center justify-center w-12 h-12 bg-slate-900 text-white rounded-2xl hover:bg-indigo-600 transition-all shadow-lg active:scale-90 group/btn">
+                            <i class="fas fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                         </a>
                     </div>
                 </div>
@@ -113,7 +108,7 @@
             btn.addEventListener('click', () => {
                 const cat = btn.dataset.category;
 
-                // Toggle Classes dos Botões
+                // Estilização dos Botões
                 buttons.forEach(b => {
                     b.classList.remove('bg-slate-900', 'text-white', 'shadow-xl', 'shadow-slate-200');
                     b.classList.add('bg-white', 'text-slate-500');
@@ -121,7 +116,7 @@
                 btn.classList.add('bg-slate-900', 'text-white', 'shadow-xl', 'shadow-slate-200');
                 btn.classList.remove('bg-white', 'text-slate-500');
 
-                // Filtragem com Animação Simples
+                // Lógica de Filtragem
                 cards.forEach(card => {
                     if (cat === 'all' || card.dataset.category === cat) {
                         card.style.display = 'flex';
