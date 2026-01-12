@@ -1,26 +1,19 @@
 import os
 from flask import Flask
-# Importamos o dicionário de configurações em vez da classe única
 from app.config import config_dict 
 from app.extensions import db, login_manager, migrate, mail, csrf
 from app.models import User 
 
 def create_app(config_name='development'):
-    """
-    Application Factory: Inicializa o app com base no ambiente selecionado.
-    Valores possíveis para config_name: 'development', 'testing', 'production'
-    """
     app = Flask(__name__, static_folder='static') 
     
-    # Busca a classe de configuração correta dentro do dicionário
-    # Se o nome não existir, o .get() usa a configuração de 'development' por padrão
+    # Busca a classe de configuração. Se não achar, usa 'development'
     config_class = config_dict.get(config_name, config_dict['development'])
     app.config.from_object(config_class)
 
-    # Inicialização das Extensões - Agora com a URI do banco carregada corretamente
+    # Inicialização das Extensões
     db.init_app(app)
     
-    # CONFIGURAÇÃO DO LOGIN MANAGER
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     login_manager.login_message = "Acesso restrito. Por favor, faça login."
@@ -30,11 +23,15 @@ def create_app(config_name='development'):
     def load_user(user_id):
         return User.query.get(int(user_id))
     
-    migrate.init_app(app, db, render_as_batch=True)
+    # AJUSTE SÊNIOR: render_as_batch só é True se o banco for SQLite
+    # Isso evita conflitos em bancos profissionais como PostgreSQL
+    is_sqlite = app.config.get('SQLALCHEMY_DATABASE_URI', '').startswith('sqlite:')
+    migrate.init_app(app, db, render_as_batch=is_sqlite)
+    
     mail.init_app(app)
     csrf.init_app(app)
 
-    # Registro de Blueprints
+    # Blueprints e CLI
     from app.auth.routes import auth_bp
     from app.main import main_bp
     from app.admin import admin_bp 
@@ -43,7 +40,6 @@ def create_app(config_name='development'):
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
-    # CLI commands
     from app.cli import register_commands
     register_commands(app)
 
