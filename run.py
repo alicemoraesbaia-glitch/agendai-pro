@@ -1,10 +1,11 @@
 import os
 from app import create_app
 
-# O sistema busca a variável 'FLASK_CONFIG'. Se não achar, usa 'development'.
+# Adicione esta linha para ver o log no Render
 env = os.environ.get('FLASK_CONFIG') or 'development'
+print(f"DEBUG: O ambiente carregado é: {env}") # <--- ADICIONE ISSO
+
 app = create_app(env)
 
 if __name__ == "__main__":
-    # O app.run() só é usado no seu computador (Localhost)
     app.run()
