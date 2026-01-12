@@ -2,13 +2,15 @@ import os
 from app import create_app, db
 from app.models import Service
 
-app = create_app()
+# SOLUÇÃO: Faz o seed_db.py ler a variável do Render igual ao seu run.py
+env = os.environ.get('FLASK_CONFIG') or 'development'
+app = create_app(env)
 
 with app.app_context():
-    # 1. REMOVIDO: A parte que deleta arquivos foi removida para não estragar as migrações.
-    # O comando 'flask db upgrade' já criou as tabelas, agora só vamos populá-las.
-
+    print(f"DEBUG: Seed rodando no ambiente: {env}") # Ajuda a conferir no log
     print("⏳ Verificando serviços existentes...")
+    
+    # Restante do seu código original...
     
     # 2. Evitar duplicatas: Só insere se a tabela estiver vazia
     if Service.query.first() is None:
