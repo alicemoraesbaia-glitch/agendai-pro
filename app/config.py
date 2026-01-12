@@ -37,8 +37,15 @@ class ProductionConfig(Config):
     
     # Lógica sênior para o PostgreSQL
     uri = os.environ.get('DATABASE_URL')
-    if uri and uri.startswith("postgres://"):
+    
+    # Se a variável estiver vazia, o sistema deve parar e avisar, 
+    # em vez de tentar usar SQLite
+    if not uri:
+        raise ValueError("ERRO: A variável DATABASE_URL não foi encontrada no Render!")
+
+    if uri.startswith("postgres://"):
         uri = uri.replace("postgres://", "postgresql://", 1)
+        
     SQLALCHEMY_DATABASE_URI = uri
     
     # Segurança Máxima em Produção
