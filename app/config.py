@@ -35,20 +35,13 @@ class ProductionConfig(Config):
     """Configuração para o Servidor na Nuvem (PostgreSQL)"""
     DEBUG = False
     
-    # Busca a variável do Render
-    uri = os.environ.get('DATABASE_URL')
+    # Apenas busca o valor, sem dar o 'raise' aqui dentro
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
     
-    # LÓGICA SÊNIOR: Se a URI não começar com 'postgres', algo está errado!
-    if not uri or not uri.startswith("postgres"):
-        raise RuntimeError("ERRO CRÍTICO: DATABASE_URL não encontrada. O sistema se recusa a usar SQLite em produção.")
-
-    # Corrige o protocolo para o SQLAlchemy 2.0
-    if uri.startswith("postgres://"):
-        uri = uri.replace("postgres://", "postgresql://", 1)
+    # Corrige o protocolo se a URI existir
+    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)
         
-    SQLALCHEMY_DATABASE_URI = uri
-    
-    # Segurança de Cookies
     SESSION_COOKIE_SECURE = True
     REMEMBER_COOKIE_SECURE = True
     REMEMBER_COOKIE_HTTPONLY = True
