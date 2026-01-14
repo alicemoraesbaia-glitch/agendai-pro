@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.extensions import db
 from app.admin import admin_bp
 from app.models import User, Appointment
+from datetime import datetime # Necessário para o Soft Delete
 
 # AJUSTE: Importação do decorador centralizado conforme sua estrutura de pastas
 from app.decorators.admin_required import admin_required
@@ -34,8 +35,9 @@ def new_user():
 
         try:
             db_role = 'patient' if role_input == 'cliente' else 'admin'
+            # CORREÇÃO: Removido 'username=' para evitar erro de setter. 
+            # O valor vai para 'name' e o Flask-Login usará o email como identidade.
             new_u = User(
-                username=username_input, 
                 name=username_input,
                 email=email, 
                 role=db_role,
@@ -102,10 +104,16 @@ def delete_user(id):
         flash('Segurança: Você não pode excluir sua própria conta.', 'danger')
         return redirect(url_for('admin.list_users'))
     
-    Appointment.query.filter_by(user_id=user.id).delete()
-    db.session.delete(user)
-    db.session.commit()
-    flash(f'Usuário {user.name} removido permanentemente.', 'success')
+    # CORREÇÃO: Implementação de SOFT DELETE conforme seu relatório da UNINTER
+    user.deleted_at = datetime.utcnow()
+    
+    try:
+        db.session.commit()
+        flash(f'Usuário {user.name} desativado com sucesso (Exclusão Lógica).', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Erro ao desativar usuário: {str(e)}', 'danger')
+        
     return redirect(url_for('admin.list_users'))
 
 @admin_bp.route('/admin/user/<int:id>/unlock', methods=['POST'])
