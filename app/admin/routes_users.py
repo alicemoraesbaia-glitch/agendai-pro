@@ -24,32 +24,42 @@ def list_users():
 @admin_required
 def new_user():
     if request.method == 'POST':
-        username_input = request.form.get('username') 
+        # 1. Captura os dados do formulário HTML (garantindo que o campo 'name' seja lido)
+        name_input = request.form.get('name') 
         email = request.form.get('email')
         password = request.form.get('password')
         role_input = request.form.get('role')
 
+        # 2. Validação de e-mail duplicado
         if User.query.filter_by(email=email).first():
             flash('Este e-mail já está cadastrado no sistema.', 'danger')
             return redirect(url_for('admin.new_user'))
 
         try:
+            # 3. Lógica de definição de papel (Role)
             db_role = 'patient' if role_input == 'cliente' else 'admin'
-            # CORREÇÃO: Removido 'username=' para evitar erro de setter. 
-            # O valor vai para 'name' e o Flask-Login usará o email como identidade.
+            
+            # 4. Instanciação do objeto User com as variáveis corretas
             new_u = User(
-                name=username_input,
+                name=name_input,      # Variável name_input agora coincide com a captura acima
                 email=email, 
                 role=db_role,
                 is_admin=True if db_role == 'admin' else False
             )
+            
+            # 5. Define a senha (com hash automático via modelo)
             new_u.set_password(password if password else "Mudar123!")
+            
+            # 6. Persistência no banco de dados PostgreSQL
             db.session.add(new_u)
             db.session.commit()
-            flash(f'Usuário {username_input} criado com sucesso!', 'success')
+            
+            flash(f'Usuário {name_input} criado com sucesso!', 'success')
             return redirect(url_for('admin.list_users'))
+            
         except Exception as e:
             db.session.rollback()
+            # Log técnico para ajudar no debug se algo mais falhar
             flash(f'Erro ao criar usuário: {str(e)}', 'danger')
 
     return render_template('admin/edit_user.html', user=None)
