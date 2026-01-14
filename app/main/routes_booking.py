@@ -109,15 +109,42 @@ def my_appointments():
 @login_required
 def cancel_appointment(appt_id):
     appt = Appointment.query.get_or_404(appt_id)
-    if appt.user_id != current_user.id: abort(403)
+    
+    # Segurança: Garante que um paciente não cancele a consulta de outro
+    if appt.user_id != current_user.id: 
+        abort(403)
     
     if appt.start_datetime < datetime.now():
         flash('Consultas passadas não podem ser canceladas.', 'warning')
         return redirect(url_for('main.my_appointments'))
 
-    appt.status = 'cancelled'
-    db.session.commit()
-    flash('Consulta cancelada com sucesso.', 'success')
+    try:
+        # 1. Capturamos o estado anterior para o histórico técnico
+        old_status = appt.status
+        appt.status = 'cancelled'
+
+        # 2. REGISTRO DE AUDITORIA: Captura o cancelamento vindo do portal do paciente
+        detalhes = (
+            f"Cancelamento via PORTAL DO PACIENTE | "
+            f"Serviço: {appt.service.name} | "
+            f"Horário original: {appt.start_datetime.strftime('%d/%m/%Y %H:%M')} | "
+            f"Status anterior: {old_status}"
+        )
+        
+        log = AuditLog(
+            action='CANCELAR_AGENDAMENTO_PACIENTE', 
+            details=detalhes, 
+            admin_email=current_user.email # O e-mail do paciente aparecerá como autor da ação
+        )
+        
+        db.session.add(log)
+        db.session.commit()
+        
+        flash('Sua consulta foi cancelada com sucesso.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Erro sistêmico ao processar o cancelamento.', 'danger')
+
     return redirect(url_for('main.my_appointments'))
 
 @main_bp.route('/simulate-payment/<int:appt_id>', methods=['POST'])
