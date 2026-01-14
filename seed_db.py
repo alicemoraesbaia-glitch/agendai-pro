@@ -23,20 +23,24 @@ def seed():
         else:
             print("✅ Serviços já existem.")
 
-        # 2. POPULANDO ADMINISTRADOR (A parte que você queria unir)
-        admin_email = "alice@gmail.com"
-        if User.query.filter_by(email=admin_email).first() is None:
-            print(f"👤 Criando administrador inicial: {admin_email}...")
-            admin = User(
-                name="Administradora Eralice",
-                email=admin_email,
-                role='admin',
-                is_admin=True
-            )
-            admin.set_password("alice@2026") # Use sua lógica de hash do model
-            db.session.add(admin)
+        # 2. POPULANDO ADMINISTRADORES
+        # 2.1 Administradora Eralice
+        admin_alice = "alice@gmail.com"
+        if User.query.filter_by(email=admin_alice).first() is None:
+            print(f"👤 Criando administrador: {admin_alice}...")
+            user_alice = User(name="Administradora Eralice", email=admin_alice, role='admin', is_admin=True)
+            user_alice.set_password("alice@2026")
+            db.session.add(user_alice)
+        
+        # 2.2 Usuário de Testes para o Avaliador (Sugestão Sênior)
+        admin_teste = "admin@teste.com"
+        if User.query.filter_by(email=admin_teste).first() is None:
+            print(f"👤 Criando usuário de testes para avaliação: {admin_teste}...")
+            user_teste = User(name="Avaliador UNINTER", email=admin_teste, role='admin', is_admin=True)
+            user_teste.set_password("admin123") # Senha simples para o avaliador
+            db.session.add(user_teste)
         else:
-            print(f"✅ Administrador {admin_email} já existe.")
+            print(f"✅ Usuário de testes {admin_teste} já existe.")
 
         # 3. COMMIT ÚNICO (Atômico)
         try:
