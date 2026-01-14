@@ -28,6 +28,7 @@ def update_status(id, new_status):
     appt = Appointment.query.get_or_404(id)
     hoje = date.today()
     
+    # 1. Lógica de Conflito para Início de Atendimento
     if new_status == 'in_progress':
         resource_id = appt.service.resource_id if appt.service else None
         if resource_id:
@@ -44,8 +45,10 @@ def update_status(id, new_status):
                 logging.warning(f"Conflito: {nome_especialista} tentou atender dois ao mesmo tempo.")
                 flash(f'Bloqueado: {nome_especialista} já está atendendo {nome_paciente_atual}!', 'danger')
                 return redirect(request.referrer or url_for('admin.dashboard'))
+        
         appt.actual_start = datetime.now()
     
+    # 2. Dicionário de Mensagens de Feedback
     messages = {
         'confirmed': f'Consulta de {appt.user.name} confirmada!',
         'arrived': f'{appt.user.name} chegou.',
@@ -55,11 +58,31 @@ def update_status(id, new_status):
     }
 
     try:
+        # 3. Armazena status antigo para o log antes da alteração
+        old_status = appt.status
         appt.status = new_status
+        
+        # 4. REGISTRO DE AUDITORIA: Somente se for cancelamento
+        if new_status == 'cancelled':
+            detalhes_cancelamento = (
+                f"Cancelamento realizado pelo Admin | "
+                f"Paciente: {appt.user.name} | "
+                f"Serviço: {appt.service.name} | "
+                f"Status Anterior: {old_status}"
+            )
+            log = AuditLog(
+                action='CANCELAR_AGENDAMENTO', 
+                details=detalhes_cancelamento, 
+                admin_email=current_user.email
+            )
+            db.session.add(log)
+
         db.session.commit()
         flash(messages.get(new_status, 'Status atualizado.'), 'success' if new_status in messages else 'info')
+        
     except Exception as e:
         db.session.rollback()
+        logging.error(f"Erro ao atualizar status: {str(e)}")
         flash('Erro ao salvar no banco de dados.', 'danger')
         
     return redirect(request.referrer or url_for('admin.dashboard'))
