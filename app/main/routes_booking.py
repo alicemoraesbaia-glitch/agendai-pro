@@ -2,7 +2,7 @@ from flask import render_template, request, flash, redirect, url_for, abort
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.main import main_bp
-from app.models import Service, Appointment
+from app.models import Service, Appointment,AuditLog
 from datetime import datetime, timedelta
 
 @main_bp.route('/book/<int:service_id>', methods=['GET', 'POST'])
@@ -110,7 +110,6 @@ def my_appointments():
 def cancel_appointment(appt_id):
     appt = Appointment.query.get_or_404(appt_id)
     
-    # Segurança: Garante que um paciente não cancele a consulta de outro
     if appt.user_id != current_user.id: 
         abort(403)
     
@@ -119,22 +118,20 @@ def cancel_appointment(appt_id):
         return redirect(url_for('main.my_appointments'))
 
     try:
-        # 1. Capturamos o estado anterior para o histórico técnico
         old_status = appt.status
         appt.status = 'cancelled'
 
-        # 2. REGISTRO DE AUDITORIA: Captura o cancelamento vindo do portal do paciente
+        # Agora o Python saberá o que é AuditLog após a importação acima
         detalhes = (
             f"Cancelamento via PORTAL DO PACIENTE | "
             f"Serviço: {appt.service.name} | "
-            f"Horário original: {appt.start_datetime.strftime('%d/%m/%Y %H:%M')} | "
             f"Status anterior: {old_status}"
         )
         
         log = AuditLog(
             action='CANCELAR_AGENDAMENTO_PACIENTE', 
             details=detalhes, 
-            admin_email=current_user.email # O e-mail do paciente aparecerá como autor da ação
+            admin_email=current_user.email
         )
         
         db.session.add(log)
@@ -143,6 +140,8 @@ def cancel_appointment(appt_id):
         flash('Sua consulta foi cancelada com sucesso.', 'success')
     except Exception as e:
         db.session.rollback()
+        # DICA SÊNIOR: Imprima o erro no terminal local para debug
+        print(f"ERRO TÉCNICO: {str(e)}") 
         flash('Erro sistêmico ao processar o cancelamento.', 'danger')
 
     return redirect(url_for('main.my_appointments'))
