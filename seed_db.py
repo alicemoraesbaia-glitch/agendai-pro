@@ -10,32 +10,37 @@ def seed():
     with app.app_context():
         print(f"DEBUG: Iniciando Bootstrap Profissional no ambiente: {env}")
 
-        # 1. POPULANDO SERVIÇOS (Com caminhos das imagens .png)
-        if Service.query.first() is None:
-            print("🌱 Inserindo serviços com ativos estáticos...")
-            servicos = [
-                Service(
-                    name="Limpeza de Pele Deep", 
+        # 1. SINCRONIZANDO SERVIÇOS E IMAGENS
+        print("🌱 Sincronizando catálogo de serviços e ativos estáticos...")
+        
+        # Mapeamento exato Nome -> Caminho da Imagem
+        catalogo = {
+            "Limpeza de Pele Deep": "assets/img/services/limpPele.png",
+            "Fisioterapia Esportiva": "assets/img/services/fisoEsport.png",
+            "Cardiologista": "assets/img/services/cardio.png",
+            "Massagem Relaxante": "assets/img/services/massagem.png",
+            "Odontologia Geral": "assets/img/services/odonto.png"
+        }
+
+        for nome, img_path in catalogo.items():
+            servico = Service.query.filter_by(name=nome).first()
+            if servico:
+                # Se o serviço já existe, forçamos a atualização do caminho da imagem
+                servico.image_url = img_path
+                print(f"🔄 Caminho de imagem atualizado para: {nome}")
+            else:
+                # Se o serviço não existe, criamos com os dados padrão
+                novo_servico = Service(
+                    name=nome, 
                     price_cents=15000, 
                     duration_minutes=60, 
-                    category="Estética", 
-                    description="Limpeza profunda.", 
-                    active=True,
-                    image_url="assets/img/services/limpPele.png" # Caminho fixo
-                ),
-                Service(
-                    name="Fisioterapia Esportiva", 
-                    price_cents=18000, 
-                    duration_minutes=45, 
                     category="Saúde", 
-                    description="Recuperação muscular.", 
                     active=True,
-                    image_url="assets/img/services/fisoEsport.png" # Caminho fixo
+                    image_url=img_path,
+                    description=f"Serviço profissional de {nome}."
                 )
-            ]
-            db.session.add_all(servicos)
-        else:
-            print("✅ Serviços já existem no banco de dados.")
+                db.session.add(novo_servico)
+                print(f"✨ Novo serviço criado: {nome}")
 
         # 2. POPULANDO ADMINISTRADORES (Essencial para o acesso do Tutor)
         # 2.1 Administradora Eralice (Dona do Projeto)
