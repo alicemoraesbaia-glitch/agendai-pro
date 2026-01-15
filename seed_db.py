@@ -2,80 +2,60 @@ import os
 from app import create_app, db
 from app.models import Service, User
 
-# Define o ambiente (Produção no Render ou Local)
 env = os.environ.get('FLASK_CONFIG') or 'production'
 app = create_app(env)
 
 def seed():
     with app.app_context():
-        print(f"DEBUG: Iniciando Bootstrap Profissional no ambiente: {env}")
+        print(f"DEBUG: Iniciando Sincronização no ambiente: {env}")
 
-        # 1. SINCRONIZANDO SERVIÇOS E IMAGENS
-        print("🌱 Sincronizando catálogo de serviços e ativos estáticos...")
-        
-        # Mapeamento exato Nome -> Caminho da Imagem
+        # 1. MAPEAMENTO DE SERVIÇOS (Apenas nomes de arquivos)
+        print("🌱 Sincronizando catálogo de imagens...")
         catalogo = {
-            "Limpeza de Pele Deep": "assets/img/services/limpPele.png",
-            "Fisioterapia Esportiva": "assets/img/services/fisoEsport.png",
-            "Cardiologista": "assets/img/services/cardio.png",
-            "Massagem Relaxante": "assets/img/services/massagem.png",
-            "Odontologia Geral": "assets/img/services/odonto.png"
+            "Limpeza de Pele Deep": "limpPele.png",
+            "Fisioterapia Esportiva": "fisoEsport.png",
+            "Cardiologista": "cardio.png",
+            "Massagem Relaxante": "massagem.png",
+            "Odontologia Geral": "odonto.png"
         }
 
-        for nome, img_path in catalogo.items():
+        for nome, filename in catalogo.items():
             servico = Service.query.filter_by(name=nome).first()
             if servico:
-                # Se o serviço já existe, forçamos a atualização do caminho da imagem
-                servico.image_url = img_path
-                print(f"🔄 Caminho de imagem atualizado para: {nome}")
+                # Atualiza o caminho se ele estiver errado (com prefixo duplicado)
+                servico.image_url = filename
+                print(f"🔄 Sincronizado: {nome} -> {filename}")
             else:
-                # Se o serviço não existe, criamos com os dados padrão
-                novo_servico = Service(
-                    name=nome, 
-                    price_cents=15000, 
-                    duration_minutes=60, 
-                    category="Saúde", 
-                    active=True,
-                    image_url=img_path,
-                    description=f"Serviço profissional de {nome}."
+                # Cria o serviço se não existir
+                novo = Service(
+                    name=nome, price_cents=15000, duration_minutes=60,
+                    category="Geral", active=True, image_url=filename,
+                    description=f"Atendimento especializado em {nome}."
                 )
-                db.session.add(novo_servico)
-                print(f"✨ Novo serviço criado: {nome}")
+                db.session.add(novo)
+                print(f"✨ Criado: {nome}")
 
-        # 2. POPULANDO ADMINISTRADORES (Essencial para o acesso do Tutor)
-        # 2.1 Administradora Eralice (Dona do Projeto)
-        admin_alice = "alice@gmail.com"
-        if User.query.filter_by(email=admin_alice).first() is None:
-            print(f"👤 Criando administradora: {admin_alice}...")
-            user_alice = User(
-                name="Administradora Eralice", 
-                email=admin_alice, 
-                role='admin', 
-                is_admin=True
-            )
-            user_alice.set_password("alice@2026")
-            db.session.add(user_alice)
-        
-        # 2.2 Usuário de Testes para o Avaliador UNINTER
-        admin_teste = "admin@teste.com"
-        if User.query.filter_by(email=admin_teste).first() is None:
-            print(f"👤 Criando conta para Avaliador UNINTER: {admin_teste}...")
-            user_teste = User(
-                name="Avaliador UNINTER", 
-                email=admin_teste, 
-                role='admin', 
-                is_admin=True
-            )
-            user_teste.set_password("admin123")
-            db.session.add(user_teste)
+        # 2. POPULANDO ADMINISTRADORES
+        # 2.1 Eralice (Autora)
+        if User.query.filter_by(email="alice@gmail.com").first() is None:
+            admin_alice = User(name="Administradora Eralice", email="alice@gmail.com", role='admin', is_admin=True)
+            admin_alice.set_password("alice@2026")
+            db.session.add(admin_alice)
+            print("👤 Admin Eralice criado.")
 
-        # 3. COMMIT ÚNICO (Garante integridade total)
+        # 2.2 Avaliador UNINTER
+        if User.query.filter_by(email="admin@teste.com").first() is None:
+            admin_teste = User(name="Avaliador UNINTER", email="admin@teste.com", role='admin', is_admin=True)
+            admin_teste.set_password("admin123")
+            db.session.add(admin_teste)
+            print("👤 Admin Avaliador criado.")
+
         try:
             db.session.commit()
-            print("✨ Bootstrap Concluído! Sistema pronto para uso e avaliação.")
+            print("✨ Bootstrap Concluído com Sucesso!")
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Erro crítico no Bootstrap: {e}")
+            print(f"❌ Erro: {e}")
 
 if __name__ == "__main__":
     seed()

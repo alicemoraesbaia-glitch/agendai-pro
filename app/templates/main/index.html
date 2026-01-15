@@ -63,7 +63,9 @@
         {% endif %}
 
         <div class="relative h-56 rounded-[2rem] overflow-hidden mb-6 shadow-inner bg-slate-100">
+            {# O segredo: s.image_url agora guarda apenas 'limpPele.png' #}
             {% set img_path = 'assets/img/services/' + s.image_url if s.image_url else 'assets/img/services/default.png' %}
+            
             <img src="{{ url_for('static', filename=img_path) }}" 
                  alt="{{ s.name }}"
                  class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
