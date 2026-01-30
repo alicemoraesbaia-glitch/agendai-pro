@@ -15,6 +15,8 @@ from app import db
 from app.auth import auth_bp 
 from app.models import User
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
+from app.auth.email import send_password_reset_email  # Certifique-se que o caminho está correto
+
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 
@@ -81,9 +83,6 @@ def logout():
 
 
 
-# Adicione ResetPasswordRequestForm aos imports no topo do arquivo
-from app.auth.email import send_password_reset_email # Verifique se este import existe!
-
 @auth_bp.route('/reset_password_request', methods=['GET', 'POST'])
 def reset_password_request():
     if current_user.is_authenticated:
@@ -92,32 +91,24 @@ def reset_password_request():
     form = ResetPasswordRequestForm()
     
     if request.method == 'POST':
-        print("--- 📥 Formulário Recebido! ---")
         if form.validate_on_submit():
-            print(f"--- ✅ Formulário Válido para o e-mail: {form.email.data} ---")
             user = User.query.filter_by(email=form.email.data).first()
-            
             if user:
-                print(f"--- 👤 Usuário encontrado: {user.username} ---")
-                
-                # --- CORREÇÃO AQUI ---
-                # Tentamos enviar e capturamos o resultado (True ou False)
-                if send_password_reset_email(user):
-                    flash('Um e-mail com instruções foi enviado com sucesso!', 'success')
-                else:
-                    # Se der erro no SMTP, cai aqui em vez de dar tela 500
-                    flash('Erro ao conectar com o servidor de e-mail. Tente novamente em alguns minutos.', 'warning')
+                # O ESCUDO: Mesmo que a função de e-mail exploda, o site continua vivo
+                try:
+                    status = send_password_reset_email(user)
+                    if status:
+                        flash('Sucesso! Verifique sua caixa de entrada.', 'success')
+                    else:
+                        flash('O servidor de e-mail recusou a conexão. Tente novamente mais tarde.', 'warning')
+                except Exception as e:
+                    print(f"--- 🚨 ERRO FATAL: {e} ---")
+                    flash('Erro interno no serviço de mensagens. Suporte já foi avisado.', 'danger')
             else:
-                print("--- ❌ Erro: E-mail não encontrado no banco de dados! ---")
-                # Por segurança, você pode manter a mensagem de sucesso mesmo se não achar o user
-                flash('Se o e-mail estiver cadastrado, você receberá as instruções em breve.', 'info')
+                flash('Se o e-mail existir, você receberá instruções.', 'info')
             
             return redirect(url_for('auth.login'))
             
-        else:
-            print(f"--- ⚠️ Erro de Validação do Formulário: {form.errors} ---")
-            flash('Por favor, insira um e-mail válido.', 'danger')
-    
     return render_template('auth/reset_password_request.html', title='Recuperar Senha', form=form)
 
 
