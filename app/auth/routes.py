@@ -96,18 +96,27 @@ def reset_password_request():
         if form.validate_on_submit():
             print(f"--- ✅ Formulário Válido para o e-mail: {form.email.data} ---")
             user = User.query.filter_by(email=form.email.data).first()
+            
             if user:
                 print(f"--- 👤 Usuário encontrado: {user.username} ---")
-                send_password_reset_email(user)
-                flash('Um e-mail com instruções foi enviado!', 'success')
+                
+                # --- CORREÇÃO AQUI ---
+                # Tentamos enviar e capturamos o resultado (True ou False)
+                if send_password_reset_email(user):
+                    flash('Um e-mail com instruções foi enviado com sucesso!', 'success')
+                else:
+                    # Se der erro no SMTP, cai aqui em vez de dar tela 500
+                    flash('Erro ao conectar com o servidor de e-mail. Tente novamente em alguns minutos.', 'warning')
             else:
                 print("--- ❌ Erro: E-mail não encontrado no banco de dados! ---")
-                flash('E-mail não encontrado.', 'danger')
+                # Por segurança, você pode manter a mensagem de sucesso mesmo se não achar o user
+                flash('Se o e-mail estiver cadastrado, você receberá as instruções em breve.', 'info')
+            
+            return redirect(url_for('auth.login'))
+            
         else:
             print(f"--- ⚠️ Erro de Validação do Formulário: {form.errors} ---")
-            flash('Dados inválidos no formulário.', 'danger')
-            
-        return redirect(url_for('auth.login'))
+            flash('Por favor, insira um e-mail válido.', 'danger')
     
     return render_template('auth/reset_password_request.html', title='Recuperar Senha', form=form)
 

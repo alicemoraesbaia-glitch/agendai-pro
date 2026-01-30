@@ -36,10 +36,11 @@ def send_password_reset_email(user):
     """
     
     # 3. Envio Direto (Sem Thread)
+    # 3. Envio Direto (Síncrono)
     try:
         mail.send(msg)
-        print(f"✅ E-mail enviado com sucesso para {user.email}!")
         return True
     except Exception as e:
-        print(f"❌ Erro crítico no envio SMTP: {e}")
+        # Registra o erro de forma simples para não sobrecarregar o log
+        current_app.logger.error(f"Erro SMTP: {e}")
         return False
