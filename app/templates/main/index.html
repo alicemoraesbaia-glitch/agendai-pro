@@ -1,30 +1,30 @@
 {% extends "base.html" %}
 
 {% block content %}
-<section class="relative pt-16 pb-20 overflow-hidden">
-    <div class="text-center relative z-10 space-y-8">
-        <div class="animate-fade-in">
+<section class="relative pt-16 pb-20 overflow-hidden z-10">
+    <div class="text-center space-y-8">
+        <div class="animate-fade-in px-4">
             <span class="inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-[0.2em] bg-indigo-50 text-indigo-600 border border-indigo-100/50 mb-4">
-                🚀 Gestão Inteligente 2025
+                🚀 Gestão Inteligente 2026
             </span>
             <h1 class="text-4xl md:text-7xl font-extrabold text-slate-900 tracking-tighter leading-[1.1]">
                 Sua saúde, <br class="hidden md:block"> 
-                sua agenda. <span class="text-indigo-600 italic">Simplificada.</span>
+                sua agenda. <span class="text-indigo-600 italic underline decoration-indigo-200 decoration-4 underline-offset-8">Simplificada.</span>
             </h1>
-            <p class="text-slate-500 mt-6 text-lg font-medium max-w-xl mx-auto">
+            <p class="text-slate-500 mt-6 text-lg font-medium max-w-xl mx-auto leading-relaxed">
                 Agende consultas e exames com os melhores especialistas em poucos cliques.
             </p>
         </div>
 
         <div class="max-w-2xl mx-auto px-4 mt-10"> 
             <form action="{{ url_for('main.index') }}" method="GET" class="relative group">
-                <div class="absolute inset-0 bg-indigo-600/20 blur-2xl group-focus-within:opacity-100 opacity-0 transition-opacity duration-500"></div>
+                <div class="absolute inset-0 bg-indigo-600/15 blur-3xl group-focus-within:opacity-100 opacity-0 transition-opacity duration-700"></div>
                 <div class="relative flex items-center">
                     <input type="text" name="q" value="{{ search_query or '' }}" 
                         placeholder="O que você busca hoje? (Ex: Cardiologista)" 
-                        class="w-full bg-white/80 backdrop-blur-xl border border-slate-200 py-5 pl-8 pr-32 rounded-[2rem] text-sm font-bold text-slate-700 focus:ring-4 focus:ring-indigo-600/10 focus:border-indigo-600 shadow-2xl transition-all outline-none">
+                        class="w-full bg-white/90 backdrop-blur-2xl border border-slate-200 py-5 pl-8 pr-32 rounded-[2rem] text-sm font-bold text-slate-700 focus:ring-8 focus:ring-indigo-600/5 focus:border-indigo-600 shadow-2xl transition-all outline-none placeholder:text-slate-300">
                     
-                    <button type="submit" class="absolute right-2 bg-slate-900 hover:bg-indigo-600 text-white px-8 py-3.5 rounded-[1.6rem] font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg">
+                    <button type="submit" class="absolute right-2 bg-slate-900 hover:bg-indigo-600 text-white px-8 py-3.5 rounded-[1.6rem] font-black text-[10px] uppercase tracking-widest transition-all active:scale-90 shadow-lg z-20">
                         Buscar
                     </button>
                 </div>
@@ -33,49 +33,52 @@
     </div>
 </section>
 
-<div class="max-w-7xl mx-auto px-4 mb-12">
-    <div class="flex items-center justify-start gap-3 overflow-x-auto pb-6 no-scrollbar">
+<div class="max-w-7xl mx-auto px-4 mb-12 relative z-20">
+    <div class="flex items-center justify-start gap-3 overflow-x-auto pb-6 no-scrollbar touch-pan-x">
         <a href="{{ url_for('main.index') }}" 
-           class="whitespace-nowrap px-6 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all
-           {{ 'bg-slate-900 text-white shadow-xl shadow-slate-200' if not active_category or active_category == 'Todos' else 'bg-white border border-slate-100 text-slate-400 hover:border-indigo-600/30 hover:text-indigo-600' }}">
+           class="whitespace-nowrap px-6 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300
+           {{ 'bg-slate-900 text-white shadow-xl shadow-slate-300 scale-105' if not active_category or active_category == 'Todos' else 'bg-white/80 backdrop-blur-md border border-slate-100 text-slate-400 hover:border-indigo-600/30 hover:text-indigo-600' }}">
             Todos os Serviços
         </a>
 
         {% for cat in categories %}
         <a href="{{ url_for('main.index', category=cat) }}" 
-           class="whitespace-nowrap px-6 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all
-           {{ 'bg-slate-900 text-white shadow-xl' if active_category == cat else 'bg-white border border-slate-100 text-slate-400 hover:border-indigo-600/30 hover:text-indigo-600' }}">
+           class="whitespace-nowrap px-6 py-3 rounded-2xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300
+           {{ 'bg-slate-900 text-white shadow-xl scale-105' if active_category == cat else 'bg-white/80 backdrop-blur-md border border-slate-100 text-slate-400 hover:border-indigo-600/30 hover:text-indigo-600' }}">
             {{ cat }}
         </a>
         {% endfor %}
     </div>
 </div>
 
-<div class="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-32">
+<div class="max-w-7xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 pb-32 relative z-10">
     {% for s in services %}
-    
-    <div class="group relative bg-white/60 backdrop-blur-md rounded-[2.5rem] border border-white/40 p-4 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 flex flex-col h-full">
+    <div class="group relative bg-white/70 backdrop-blur-xl rounded-[2.5rem] border border-white/50 p-4 hover:shadow-[0_40px_80px_-20px_rgba(79,70,229,0.15)] hover:-translate-y-2 transition-all duration-500 flex flex-col h-full">
         
         {% if loop.index == 1 and not active_category and not search_query %}
-        <div class="absolute -top-3 -right-2 z-20 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-4 py-1.5 rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-lg border-2 border-white">
+        <div class="absolute -top-3 -right-2 z-30 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-4 py-1.5 rounded-2xl font-black text-[9px] uppercase tracking-widest shadow-xl border-2 border-white animate-bounce-subtle">
             ⭐ Popular
         </div>
         {% endif %}
 
-        <div class="relative h-56 rounded-[2rem] overflow-hidden mb-6 shadow-inner bg-slate-100">
-            {# O segredo: s.image_url agora guarda apenas 'limpPele.png' #}
+        <div class="relative h-56 rounded-[2rem] overflow-hidden mb-6 shadow-inner bg-slate-200">
             {% set img_path = 'assets/img/services/' + s.image_url if s.image_url else 'assets/img/services/default.png' %}
             
             <img src="{{ url_for('static', filename=img_path) }}" 
                  alt="{{ s.name }}"
-                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
-                 onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1505751172107-573957a2436d?q=80&w=800&auto=format&fit=crop';">
+                 class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
             
-            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
             
-            <span class="absolute top-4 left-4 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-xl text-[9px] font-bold uppercase tracking-widest text-slate-800 border border-white/20">
+            <span class="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-xl text-[9px] font-bold uppercase tracking-widest text-slate-900 shadow-sm z-10">
                 {{ s.category or 'Premium' }}
             </span>
+        
+            <div class="absolute bottom-4 left-4 right-4 z-10">
+                <p class="text-white text-[10px] font-black uppercase tracking-tighter opacity-80">
+                    Agendar Agora
+                </p>
+            </div>
         </div>
 
         <div class="px-2 flex flex-col flex-grow">
@@ -86,30 +89,44 @@
                 {{ s.description or 'Atendimento personalizado com equipamentos de última geração e especialistas certificados.' }}
             </p>
             
-            <div class="mt-8 pt-5 border-t border-slate-100/60 flex items-center justify-between">
+            <div class="mt-8 pt-5 border-t border-slate-100/80 flex items-center justify-between">
                 <div class="flex flex-col">
-                    <span class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest">Valor da Sessão</span>
+                    <span class="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Investimento</span>
                     <span class="text-2xl font-black text-slate-900 tracking-tighter">
                         <span class="text-sm font-bold text-indigo-600">R$</span> {{ "%.2f"|format(s.price_cents / 100) }}
                     </span>
                 </div>
                 
                 <a href="{{ url_for('main.service_detail', service_id=s.id) }}" 
-                   class="bg-indigo-600 text-white p-4 rounded-2xl hover:bg-slate-900 transition-all active:scale-90 shadow-xl shadow-indigo-600/20 flex items-center justify-center">
-                    <i class="fas fa-plus"></i>
+                    class="bg-indigo-600 text-white p-4 rounded-2xl hover:bg-slate-900 transition-all active:scale-90 shadow-xl shadow-indigo-600/30 flex items-center justify-center group/btn relative z-30">
+                    <i class="fas fa-plus transition-transform group-hover/btn:rotate-90"></i>
                 </a>
             </div>
         </div>
     </div>
     {% else %}
     <div class="col-span-full py-32 text-center bg-white/40 backdrop-blur-md rounded-[3rem] border-2 border-dashed border-slate-200">
-        <div class="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+        <div class="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
             <i class="fas fa-search-minus text-3xl"></i>
         </div>
-        <h3 class="text-xl font-bold text-slate-800">Nenhum serviço encontrado</h3>
-        <p class="text-slate-500 mt-2 font-medium">Tente ajustar seus filtros ou termos de busca.</p>
-        <a href="{{ url_for('main.index') }}" class="text-indigo-600 font-black text-xs uppercase mt-6 inline-block border-b-2 border-indigo-600 pb-1 hover:text-slate-900 hover:border-slate-900 transition-all">Resetar Busca</a>
+        <h3 class="text-xl font-bold text-slate-800 uppercase tracking-widest">Nada por aqui</h3>
+        <p class="text-slate-500 mt-2 font-medium">Não encontramos serviços para "{{ search_query }}".</p>
+        <a href="{{ url_for('main.index') }}" class="text-indigo-600 font-black text-xs uppercase mt-8 inline-block border-b-2 border-indigo-600 pb-1 hover:text-slate-900 hover:border-slate-900 transition-all">
+            Ver catálogo completo
+        </a>
     </div>
     {% endfor %}
 </div>
+
+<style>
+    /* Suaviza o scroll horizontal das categorias */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    @keyframes bounce-subtle {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+    .animate-bounce-subtle { animation: bounce-subtle 3s infinite ease-in-out; }
+</style>
 {% endblock %}

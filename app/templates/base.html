@@ -10,6 +10,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     
     {% block head %}{% endblock %}
     
@@ -37,12 +38,26 @@
             height: 55vw;
             border-radius: 50%;
             filter: blur(120px);
-            z-index: -1;
+            z-index: -1; /* Mantido atrás de tudo */
             opacity: 0.12;
             pointer-events: none;
             will-change: transform;
             animation: blob-float 20s infinite alternate cubic-bezier(0.45, 0, 0.55, 1);
         }
+
+        /* Ajuste Sênior: No mobile, o blur excessivo trava o Render e esconde botões */
+        @media (max-width: 768px) {
+            .bg-blob {
+                filter: blur(60px); 
+                opacity: 0.08;
+            }
+            /* Garante que o topo da navbar no mobile não sobreponha o conteúdo */
+            .sticky {
+                position: sticky !important;
+                top: 0 !important;
+            }
+        }
+
         @keyframes blob-float {
             from { transform: translate(0, 0) rotate(0deg) scale(1); }
             to { transform: translate(8%, 12%) rotate(15deg) scale(1.1); }
@@ -199,14 +214,14 @@
     </div>
     {% endif %}
 
-    {# 5. CONTEÚDO DINÂMICO #}
-    <main class="{% if request.endpoint == 'admin.tv_panel' %}w-full h-screen p-0 m-0 overflow-hidden{% else %}flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative{% endif %}">
+    {# 5. CONTEÚDO DINÂMICO (Ajustado com z-index para Mobile) #}
+    <main class="{% if request.endpoint == 'admin.tv_panel' %}w-full h-screen p-0 m-0 overflow-hidden{% else %}flex-grow w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10{% endif %}">
         {% block content %}{% endblock %}
     </main>
 
     {# 6. RODAPÉ PREMIUM #}
     {% if request.endpoint != 'admin.tv_panel' %}
-    <footer class="bg-white border-t border-slate-100 py-12 mt-auto">
+    <footer class="bg-white border-t border-slate-100 py-12 mt-auto relative z-10">
         <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
             <div class="text-center md:text-left">
                 <span class="text-xl font-black text-slate-800 uppercase tracking-tighter">Smart<span class="text-indigo-600">Agenda</span></span>

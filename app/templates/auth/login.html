@@ -82,4 +82,11 @@
         </p>
     </div>
 </div>
+<script>
+    document.querySelector('form').onsubmit = function() {
+        const btn = this.querySelector('button[type="submit"]');
+        btn.innerHTML = 'Autenticando...'; // Feedback imediato para o usuário
+        btn.style.opacity = '0.5';
+    };
+</script>
 {% endblock %}

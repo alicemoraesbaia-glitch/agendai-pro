@@ -17,6 +17,7 @@ from app.models import User
 from app.auth.forms import LoginForm, RegistrationForm, ResetPasswordRequestForm, ResetPasswordForm
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
+
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('main.index'))

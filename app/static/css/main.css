@@ -1,0 +1,130 @@
+/* ---------------------------------------------------------
+   SMART AGENDA - ESTILOS GLOBAIS DE INTERAÇÃO
+   --------------------------------------------------------- */
+
+/* 1. Transição suave para tudo que for clicável */
+a,
+button,
+.cursor-pointer {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 2. Efeito Global para Links (Navbar, Rodapé, Esqueci Senha) */
+a:hover {
+  color: #4f46e5 !important; /* Indigo-600 */
+  transform: translateY(-1px);
+}
+
+/* 3. Efeito nos Botões de Ação (Principais) */
+button[type="submit"]:hover,
+.bg-indigo-600:hover {
+  background-color: #1e293b !important; /* Slate-900 (Escurece ao passar o mouse) */
+  box-shadow: 0 10px 25px -5px rgba(79, 70, 229, 0.4);
+  transform: scale(1.02);
+}
+
+/* 4. Destaque para os Cards de Serviço */
+.group:hover {
+  border-color: rgba(79, 70, 229, 0.3) !important;
+}
+
+/* 5. Efeito no Ícone de Plus (+) do Card */
+.group:hover .fa-plus {
+  transform: rotate(90deg) scale(1.1);
+  color: #ffffff;
+}
+
+/* 6. Correção de Visibilidade para os "Blobs" de fundo */
+main {
+  position: relative;
+  z-index: 10; /* Garante que o conteúdo fique SEMPRE na frente das bolas coloridas */
+}
+
+/* ---------------------------------------------------------
+   INTERAÇÃO DE CAMPOS DE TEXTO (INPUTS)
+   --------------------------------------------------------- */
+
+/* Estado Natural do Campo */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+  transition: all 0.3s ease !important;
+  border: 1px solid #e2e8f0; /* Cor slate-200 padrão */
+}
+
+/* 1. Ao passar o mouse (Hover) */
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="password"]:hover {
+  border-color: #cbd5e1; /* Escurece a borda levemente */
+  background-color: #f8fafc; /* Um fundo cinza quase imperceptível */
+  cursor: text;
+}
+
+/* 2. Ao clicar para digitar (Focus) */
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus {
+  background-color: #ffffff;
+  border-color: #4f46e5; /* Cor Indigo-600 */
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1); /* Brilho externo suave */
+  transform: translateY(-1px); /* Leve elevação */
+  outline: none;
+}
+
+/* 3. Ajuste para o link "RECUPERAR" */
+.text-slate-400.hover\:text-indigo-600 {
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.2s ease;
+}
+
+/* Garante que o botão de login reaja exatamente como os outros */
+.login-container button,
+.login-container input[type="submit"],
+button.w-full {
+  background-color: #0f172a !important; /* Slate-900 inicial */
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  cursor: pointer !important;
+  position: relative;
+  z-index: 20;
+}
+
+/* O efeito de "Acender" ao passar o mouse */
+.login-container button:hover,
+.login-container input[type="submit"]:hover,
+button.w-full:hover {
+  background-color: #4f46e5 !important; /* Muda para Indigo-600 */
+  transform: translateY(-2px) scale(1.01); /* Leve subida e aumento */
+  box-shadow: 0 15px 30px -5px rgba(79, 70, 229, 0.3); /* Brilho azul */
+}
+
+/* Efeito de clique (feedback tátil) */
+.login-container button:active,
+button.w-full:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  button:active,
+  a:active {
+    background-color: #4f46e5 !important;
+    transition: none !important;
+  }
+}
+
+/* Botão "COMEÇAR" e outros botões principais */
+.bg-slate-900:hover,
+button:hover,
+.btn-primary:hover {
+  background-color: #4f46e5 !important; /* Indigo-600 */
+  color: #ff0000 !important; /* FORÇA O TEXTO BRANCO */
+  box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+}
+
+/* Garante que ícones dentro desses botões também fiquem brancos */
+.bg-slate-900:hover i,
+button:hover i {
+  color: #ff0000 !important;
+}

@@ -136,14 +136,23 @@ def delete_user(id):
         
     return redirect(url_for('admin.list_users'))
 
-@admin_bp.route('/admin/user/<int:id>/unlock', methods=['POST'])
+@admin_bp.route('/admin/user/<int:id>/toggle-status', methods=['POST'])
 @login_required
 @admin_required
-def unlock_user(id):
+def unlock_user(id): # Mantive o nome da função para não quebrar seus links
     user = User.query.get_or_404(id)
-    user.reset_failed_attempts()
+    
+    if user.is_locked:
+        # Lógica de Desbloqueio
+        user.is_locked = False
+        user.failed_login_attempts = 0
+        flash(f'Acesso de {user.name} liberado com sucesso!', 'success')
+    else:
+        # Lógica de Bloqueio Manual
+        user.is_locked = True
+        flash(f'A conta de {user.name} foi suspensa manualmente.', 'warning')
+        
     db.session.commit()
-    flash(f'A conta de {user.name} foi desbloqueada com sucesso.', 'success')
     return redirect(url_for('admin.list_users'))
 
 @admin_bp.route('/user/<int:id>/history')

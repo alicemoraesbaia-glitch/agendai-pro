@@ -8,7 +8,6 @@
     {# HEADER #}
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
         <div class="space-y-4">
-            {# Ajuste: Certifique-se que o endpoint é 'admin.list_users' #}
             <a href="{{ url_for('admin.list_users') }}" class="group inline-flex items-center text-indigo-500 text-[10px] font-black uppercase tracking-[0.2em] hover:text-indigo-700 transition-colors">
                 <svg class="w-4 h-4 mr-2 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"/></svg>
                 Voltar para Lista
@@ -24,6 +23,17 @@
         <div class="bg-slate-900 p-8 md:p-12 text-white relative">
             <p class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.4em] mb-2">Informações de Acesso</p>
             <h2 class="text-xl font-bold opacity-90 italic">Dados principais do registro</h2>
+            
+            {# --- ADIÇÃO: AVISO DE BLOQUEIO PARA O ADMIN --- #}
+            {% if user and user.is_locked %}
+            <div class="mt-4 inline-flex items-center px-4 py-2 bg-rose-500/20 border border-rose-500/30 rounded-xl animate-pulse">
+                <span class="text-[9px] font-black text-rose-300 uppercase tracking-widest flex items-center gap-2">
+                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/></svg>
+                    Atenção: Esta conta está bloqueada
+                </span>
+            </div>
+            {% endif %}
+
             <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
         </div>
         
@@ -61,7 +71,6 @@
                 <p class="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] mb-6 ml-2 italic">Detalhes do Perfil Especializado</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {# Bloco de Paciente: Aparece se não houver user (novo) ou se o role for patient #}
                     {% if not user or user.role == 'patient' %}
                     <div class="space-y-3">
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">CPF</label>
@@ -75,7 +84,6 @@
                     </div>
                     {% endif %}
 
-                    {# Bloco Profissional: Aparece se o user for admin ou staff #}
                     {% if user and user.role != 'patient' %}
                     <div class="space-y-3">
                         <label class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Registro (CRM/CRP)</label>
@@ -119,7 +127,6 @@
             <h3 class="text-rose-600 font-black text-[10px] uppercase tracking-widest mb-1">Zona Crítica</h3>
             <p class="text-rose-400 text-[10px] font-bold uppercase">A exclusão removerá todos os dados do banco.</p>
         </div>
-        {# Ajuste: Certifique-se que o endpoint é 'admin.delete_user' #}
         <form action="{{ url_for('admin.delete_user', id=user.id) }}" method="POST" onsubmit="return confirm('Apagar definitivamente?')">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="px-6 py-3 bg-white border border-rose-200 text-rose-500 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all">Excluir</button>

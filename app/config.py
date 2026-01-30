@@ -28,11 +28,21 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_USERNAME')
 
+import os
+
+import os
+
+# Caminho da pasta 'app'
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 class DevelopmentConfig(Config):
     """Configuração para o seu PC (Localhost)"""
     DEBUG = True
-    # Usa SQLite local por padrão
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or 'sqlite:///smart_agenda.db'
+    
+    # O '..' faz o Python subir um nível (sair de 'app') para achar 'instance'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL') or \
+        'sqlite:///' + os.path.join(basedir, '..', 'instance', 'smart_agenda.db')
+    
     SESSION_COOKIE_SECURE = False
     REMEMBER_COOKIE_SECURE = False
 
