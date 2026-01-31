@@ -1,50 +1,40 @@
-# -*- coding: utf-8 -*-
-from flask import render_template, current_app, url_for
-from flask_mail import Message
-from app.extensions import mail
+import requests
+import os
+from flask import current_app, url_for
 
 def send_password_reset_email(user):
-    """Envia o e-mail de redefinição de forma direta (síncrona) para garantir entrega no Render"""
-    # 1. Gera o token e a URL
     token = user.get_reset_password_token()
     reset_url = url_for('auth.reset_password', token=token, _external=True)
     
+    # Dados da API do Resend
+    api_key = os.environ.get('MAIL_PASSWORD') # Sua chave re_...
+    sender = os.environ.get('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev')
 
-    # 2. Configura a mensagem
-    msg = Message(
-        '[Smart Agenda] Redefinição de Senha',
-        # MUDANÇA AQUI: Use o e-mail real, não o usuário 'resend'
-        sender=current_app.config.get('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev'),
-        recipients=[user.email]
-    )
-
-
-    
-    msg.body = f"Olá {user.name},\n\nPara redefinir sua senha, utilize o link: {reset_url}"
-    
-    msg.html = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px;">
-        <h2 style="color: #10b981;">Smart Agenda</h2>
-        <p>Olá, <strong>{user.name}</strong>,</p>
-        <p>Recebemos uma solicitação para redefinir a senha da sua conta na clínica.</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{reset_url}" 
-               style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-                Redefinir Senha
-            </a>
-        </div>
-        <p style="color: #64748b; font-size: 0.9em;">Este link é válido por 30 minutos. Se você não solicitou esta alteração, ignore este e-mail.</p>
-        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 20px 0;">
-        <p style="color: #94a3b8; font-size: 0.8em; text-align: center;">Smart Agenda - Gestão Clínica Inteligente</p>
-    </div>
-    """
-    
-    # 3. Envio Direto (Sem Thread)
-    # 3. Envio Direto (Síncrono)
     try:
-        mail.send(msg)
-        return True
+        response = requests.post(
+            "https://api.resend.com/emails",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": sender,
+                "to": user.email,
+                "subject": "[Smart Agenda] Redefinição de Senha",
+                "html": f"""
+                <p>Olá, <strong>{user.name}</strong>,</p>
+                <p>Clique no link para redefinir sua senha: <a href="{reset_url}">{reset_url}</a></p>
+                """
+            },
+            timeout=10 # Evita que o Gunicorn mate o processo
+        )
+        
+        if response.status_code in [200, 201, 202]:
+            return True
+        else:
+            current_app.logger.error(f"Erro Resend API: {response.text}")
+            return False
+            
     except Exception as e:
-        # Isso evita que o app morra (SystemExit) se a conexão falhar
-        current_app.logger.error(f"FALHA NO SMTP: {str(e)}")
+        current_app.logger.error(f"Erro de Conexão API: {e}")
         return False
