@@ -18,7 +18,7 @@ def send_password_reset_email(user):
         recipients=[user.email]
     )
 
-# ... (resto do código igual)
+
     
     msg.body = f"Olá {user.name},\n\nPara redefinir sua senha, utilize o link: {reset_url}"
     
@@ -45,6 +45,6 @@ def send_password_reset_email(user):
         mail.send(msg)
         return True
     except Exception as e:
-        # Registra o erro de forma simples para não sobrecarregar o log
-        current_app.logger.error(f"Erro SMTP: {e}")
+        # Isso evita que o app morra (SystemExit) se a conexão falhar
+        current_app.logger.error(f"FALHA NO SMTP: {str(e)}")
         return False
