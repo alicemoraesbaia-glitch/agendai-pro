@@ -9,12 +9,16 @@ def send_password_reset_email(user):
     token = user.get_reset_password_token()
     reset_url = url_for('auth.reset_password', token=token, _external=True)
     
+
     # 2. Configura a mensagem
     msg = Message(
         '[Smart Agenda] Redefinição de Senha',
-        sender=current_app.config['MAIL_USERNAME'],
+        # MUDANÇA AQUI: Use o e-mail real, não o usuário 'resend'
+        sender=current_app.config.get('MAIL_DEFAULT_SENDER', 'onboarding@resend.dev'),
         recipients=[user.email]
     )
+
+# ... (resto do código igual)
     
     msg.body = f"Olá {user.name},\n\nPara redefinir sua senha, utilize o link: {reset_url}"
     
