@@ -2,12 +2,19 @@ import os
 from app import create_app, db
 from app.models import Service, User
 
+# Define o ambiente (production ou development)
 env = os.environ.get('FLASK_CONFIG') or 'production'
 app = create_app(env)
 
 def seed():
     with app.app_context():
         print(f"DEBUG: Iniciando Sincronização no ambiente: {env}")
+
+        # --- CORREÇÃO SÊNIOR: CRIA AS TABELAS NO BANCO NOVO ---
+        print("🛠️ Verificando e criando tabelas no banco de dados...")
+        db.create_all() 
+        print("✅ Estrutura do banco de dados pronta.")
+        # ---------------------------------------------------
 
         # 1. MAPEAMENTO DE SERVIÇOS (Apenas nomes de arquivos)
         print("🌱 Sincronizando catálogo de imagens...")
@@ -22,7 +29,7 @@ def seed():
         for nome, filename in catalogo.items():
             servico = Service.query.filter_by(name=nome).first()
             if servico:
-                # Atualiza o caminho se ele estiver errado (com prefixo duplicado)
+                # Atualiza o caminho se ele estiver errado
                 servico.image_url = filename
                 print(f"🔄 Sincronizado: {nome} -> {filename}")
             else:
@@ -55,7 +62,7 @@ def seed():
             print("✨ Bootstrap Concluído com Sucesso!")
         except Exception as e:
             db.session.rollback()
-            print(f"❌ Erro: {e}")
+            print(f"❌ Erro no commit: {e}")
 
 if __name__ == "__main__":
     seed()
